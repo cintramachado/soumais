@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, LayoutDashboard, LogOut, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ClipboardList, LayoutDashboard, LogOut, Tags, Users } from "lucide-react";
 
 import { signOutAction } from "@/lib/auth/actions";
 import type { Profile } from "@/lib/auth/profile";
@@ -26,6 +26,8 @@ export function DashboardShell({
         { href: "/teacher/periods", label: "Períodos", icon: CalendarDays },
         { href: "/teacher/classes", label: "Turmas e alunos", icon: Users },
         { href: "/teacher/parents", label: "Responsáveis", icon: Users },
+        { href: "/teacher/task-types", label: "Tipos de tarefa", icon: Tags },
+        { href: "/teacher/tasks", label: "Tarefas", icon: ClipboardList },
       ]
     : [{ href: homePath, label: "Visão geral", icon: LayoutDashboard }];
 

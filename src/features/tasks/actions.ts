@@ -1,13 +1,12 @@
 'use server';
 
 import { z } from 'zod';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireProfile } from '@/lib/auth/profile';
 import { createClient } from '@/lib/supabase/server';
 import { taskDraftSchema, taskStateSchema, taskTypeSchema } from './schemas';
 
-export type TaskResult = { error?: string; success?: string };
+export type TaskResult = { error?: string; success?: string; id?: string };
 
 export async function saveTaskType(input: unknown): Promise<TaskResult> {
   const parsed = taskTypeSchema.safeParse(input);
@@ -35,7 +34,7 @@ export async function saveTaskDraft(input: unknown): Promise<TaskResult> {
     return { error: 'Não foi possível salvar. Confira o período, as datas e os destinatários.' };
   }
   revalidatePath('/teacher/tasks', 'layout');
-  redirect(`/teacher/tasks/${data}`);
+  return { success: 'Rascunho salvo.', id: data as string };
 }
 
 export async function publishTask(input: unknown): Promise<TaskResult> {

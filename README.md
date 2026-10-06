@@ -44,6 +44,16 @@ As migrations 005/006/007 suportam provisionamento Auth em duas etapas, respons�
 
 ## Desenvolvimento
 
+## Tarefas
+
+Em `Tipos de tarefa`, cadastre a pontuação padrão. Em `Tarefas`, crie um rascunho com tipo, período, datas, pontuação máxima e destinos: turma inteira, grupos ou alunos específicos. Destinos podem se sobrepor: cada aluno recebe somente uma atribuição. A busca de destinos é paginada e consulta apenas turmas autorizadas do ano letivo do período.
+
+Salve o rascunho e publique pelo detalhe da tarefa. A publicação é transacional, exige ao menos um aluno ativo, registra auditoria e materializa `student_tasks`. Publicar novamente não recalcula os destinatários nem duplica registros. Alterações posteriores de matrícula/grupo não mudam o snapshot. As datas da tarefa devem estar dentro do período escolhido.
+
+Somente o criador pode gerenciar suas tarefas, e ele deve continuar autorizado nas turmas dos destinos. Perder o vínculo docente bloqueia leitura e alteração. Rascunhos são editáveis; tarefas publicadas podem ser encerradas ou canceladas com confirmação, preservando as atribuições. Tipos/políticas são isolados por organização. A política padrão usa o multiplicador configurado no banco; o motor de pontuação e o lançamento dos resultados pertencem às fases seguintes.
+
+Migrations desta etapa: 008 (tarefas/publicação), 009 (filtros paginados), 010 (revogação de escopo) e 011 (constraints de entrada). Nenhum seed de produção ou mock é utilizado nos cadastros.
+
 ```powershell
 npm run dev
 ```
