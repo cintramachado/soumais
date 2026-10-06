@@ -30,9 +30,31 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Environment files, including locally populated examples
 .env*
-!.env.example
+*.env
+*.env.*
+
+# Credentials and local provisioning files
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+key.properties
+signing_keys.json
+service-account*.json
+credentials*.json
+secrets/
+.secrets/
+create-admin.*
+*.dump
+*.backup
+
+# Nested dependency folders and Supabase local artifacts
+node_modules/
+supabase/.temp/
+supabase/.branches/
 
 # vercel
 .vercel
