@@ -177,12 +177,13 @@ export async function updateGroup(input: unknown): Promise<MutationResult> {
   const { error } = await supabase.from("groups").update({
     name: parsed.data.name,
     active: parsed.data.active,
+    responsible_teacher_id: parsed.data.responsibleTeacherId || null,
   }).eq("id", parsed.data.id);
   if (error) {
     reportFailure("update group", error);
-    return { error: "Não foi possível atualizar o grupo." };
+    return { error: "Não foi possível atualizar o grupo. Selecione um professor ativo vinculado à turma." };
   }
-  revalidatePath("/teacher/classes");
+  revalidatePath("/teacher/classes", "layout");
   return { success: "Grupo atualizado." };
 }
 

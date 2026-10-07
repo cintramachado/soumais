@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode } from 'react';
 
 import type { AppRole, Profile } from "@/lib/auth/profile";
 
@@ -8,7 +9,7 @@ const roleLabels: Record<AppRole, string> = {
   parent: "Responsável",
 };
 
-export function DashboardHome({ profile, role }: { profile: Profile; role: AppRole }) {
+export function DashboardHome({ profile, role, children }: { profile: Profile; role: AppRole; children?: ReactNode }) {
   return (
     <section aria-labelledby="dashboard-title">
       <div className="border-b border-[#dce4de] pb-6">
@@ -30,7 +31,7 @@ export function DashboardHome({ profile, role }: { profile: Profile; role: AppRo
           </div>
         ))}
       </div>
-      <div className="mt-8 flex min-h-64 flex-col items-center justify-center border border-dashed border-[#cbd6ce] bg-white px-5 py-10 text-center">
+      {children ?? <div className="mt-8 flex min-h-64 flex-col items-center justify-center border border-dashed border-[#cbd6ce] bg-white px-5 py-10 text-center">
         <Image
           src="/brand/soul-mais-cristo.jpg"
           alt="Soul+ em Cristo"
@@ -42,7 +43,7 @@ export function DashboardHome({ profile, role }: { profile: Profile; role: AppRo
         <p className="mt-2 max-w-md text-sm leading-6 text-[#6a7b75]">
           Os indicadores serão exibidos quando os dados da sua área estiverem disponíveis.
         </p>
-      </div>
+      </div>}
     </section>
   );
 }

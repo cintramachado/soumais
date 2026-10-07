@@ -15,21 +15,23 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
   await requireProfile("teacher");
   const { classId } = await params;
   const supabase = await createClient();
-  const [classResult, groupsResult, enrollmentsResult] = await Promise.all([
+  const [classResult, groupsResult, enrollmentsResult, teachersResult] = await Promise.all([
     supabase.from("classes").select("id, name, active, school_year_id, school_years!inner(year)").eq("id", classId).maybeSingle(),
-    supabase.from("groups").select("id, name, active").eq("class_id", classId).order("name").limit(100),
+    supabase.from("groups").select("id, name, active, responsible_teacher:teachers!groups_responsible_teacher_id_fkey(id,name,active)").eq("class_id", classId).order("name").limit(100),
     supabase.from("student_enrollments")
       .select("id, students!inner(id, name, birth_date, active), student_groups(group_id, groups(id, name))")
       .eq("class_id", classId)
       .eq("active", true)
       .order("enrolled_at", { ascending: true })
       .limit(100),
+    supabase.from("teacher_classes").select("teachers!inner(id,name,active)").eq("class_id", classId).eq("teachers.active", true).order("teacher_id").limit(100),
   ]);
 
   if (!classResult.data && !classResult.error) notFound();
   const schoolClass = classResult.data;
   const schoolYear = schoolClass?.school_years as unknown as { year: number } | null;
   const activeGroups = (groupsResult.data ?? []).filter((group) => group.active);
+  const availableTeachers = (teachersResult.data ?? []).map((row) => row.teachers as unknown as { id: string; name: string });
 
   return (
     <div className="space-y-9">
@@ -78,7 +80,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
             </div>
           </details>
         )}
-        {groupsResult.error ? <SchoolLoadError /> : !groupsResult.data?.length ? (
+        {groupsResult.error || teachersResult.error ? <SchoolLoadError /> : !groupsResult.data?.length ? (
           <SchoolEmptyState message="Nenhum grupo cadastrado nesta turma." />
         ) : (
           <div className="divide-y divide-[#dce4de] border-y border-[#dce4de] bg-white">
@@ -86,6 +88,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
               <article key={group.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                   <h3 className="text-sm font-medium">{group.name}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Professor: {(group.responsible_teacher as unknown as { name: string } | null)?.name ?? "Sem responsável"}</p>
                   {!group.active && <p className="mt-1 text-xs text-[#71817c]">Inativo</p>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -94,7 +97,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
                       Editar
                     </summary>
                     <div className="absolute right-4 z-10 mt-2 w-[min(92vw,32rem)] border border-[#dce4de] bg-white p-4 shadow-md sm:right-8">
-                      <GroupEditForm id={group.id} name={group.name} active={group.active} />
+                      <GroupEditForm id={group.id} name={group.name} active={group.active} teachers={availableTeachers} responsibleTeacher={group.responsible_teacher as unknown as { id: string; name: string; active: boolean } | null} />
                     </div>
                   </details>
                   <ActiveToggle kind="group" id={group.id} active={group.active} label={`grupo ${group.name}`} />

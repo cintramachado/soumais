@@ -62,6 +62,18 @@ Abra `http://localhost:3000`. Sem variáveis Supabase, a aplicação mostra uma 
 
 ## Qualidade
 
+## Professores, grupos e relatório PDF
+
+No menu `Professores`, cadastre nome, email e telefone e abra o cadastro para vincular turmas sob sua administração. O vínculo concede acesso à turma inteira depois de a conta estar provisionada e ativa; toda inclusão/remoção de vínculo exige confirmação. O cadastro sozinho não cria login nem armazena senha. Provisione a conta pelo Auth Admin API com papel `teacher` e o mesmo email: o registro docente existente será reutilizado. Inativar um professor vinculado bloqueia o perfil e suas permissões.
+
+Em `Turmas e alunos > Abrir turma > Grupos > Editar`, selecione o professor responsável. Só docentes ativos vinculados àquela turma são aceitos, com validação no PostgreSQL. O nome aparece na lista de grupos. Remova ou troque a responsabilidade dos grupos antes de retirar o vínculo do professor à turma.
+
+O dashboard do professor oferece `Gerar relatório`. Selecione turma e, opcionalmente, período e grupo. O PDF consolida a matrícula e os grupos atuais, os docentes da turma, o responsável de cada grupo e os pontos vigentes de cada aluno. Ajustes manuais prevalecem; tarefas canceladas são excluídas. O total inclui resultados de todos os docentes para os alunos/ano letivo selecionados, não apenas tarefas criadas pelo solicitante. A consulta valida o acesso à turma e usa um snapshot consistente.
+
+O PDF usa fontes locais, tabela multipágina, data de emissão e identificação do emissor. É gerado em memória, retornado com `private, no-store` e não é salvo no servidor ou cache PWA. Limite: 1.000 alunos por emissão; use filtro de grupo para turmas maiores. O arquivo baixado contém dados de alunos e deve ser compartilhado apenas com pessoas autorizadas.
+
+Migrations: 014 (snapshot do relatório), 015/016 (cadastro e escopo docente), 017 (responsável do grupo) e 018 (docentes dos grupos no relatório).
+
 ## Pontuação e histórico
 
 No detalhe de uma tarefa publicada, clique no aluno atribuído para registrar o resultado, ajustar a pontuação ou consultar o histórico. Resultados de tarefas ativas ou encerradas podem ser corrigidos; tarefas canceladas mantêm o histórico, mas não permitem lançamentos nem entram nas métricas.

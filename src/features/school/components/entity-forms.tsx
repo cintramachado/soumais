@@ -228,22 +228,31 @@ export function GroupEditForm({
   id,
   name,
   active,
+  responsibleTeacher,
+  teachers,
 }: {
   id: string;
   name: string;
   active: boolean;
+  responsibleTeacher: { id: string; name: string; active: boolean } | null;
+  teachers: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const form = useForm<z.input<typeof groupUpdateSchema>>({
     resolver: zodResolver(groupUpdateSchema),
-    defaultValues: { id, name, active },
+    defaultValues: { id, name, active, responsibleTeacherId: responsibleTeacher?.id ?? "" },
   });
   const onSubmit = form.handleSubmit((values) => {
+    form.clearErrors("root");
     startTransition(async () => {
-      const result = await updateGroup(values);
-      if (result.error) form.setError("root", { message: result.error });
-      else router.refresh();
+      try {
+        const result = await updateGroup(values);
+        if (result.error) form.setError("root", { message: result.error });
+        else router.refresh();
+      } catch {
+        form.setError("root", { message: "Não foi possível salvar o responsável do grupo." });
+      }
     });
   });
 
@@ -253,6 +262,15 @@ export function GroupEditForm({
         <Label htmlFor={`edit-group-${id}`}>Nome do grupo</Label>
         <Input id={`edit-group-${id}`} maxLength={120} {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <Label htmlFor={`group-teacher-${id}`}>Professor responsável</Label>
+        <select id={`group-teacher-${id}`} className={selectClassName} disabled={isPending} {...form.register("responsibleTeacherId")}>
+          <option value="">Sem responsável</option>
+          {teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
+          {responsibleTeacher && !teachers.some((teacher) => teacher.id === responsibleTeacher.id) && <option value={responsibleTeacher.id}>{responsibleTeacher.name} (indisponível)</option>}
+        </select>
+        {form.formState.errors.responsibleTeacherId && <FieldError>Selecione um professor válido.</FieldError>}
       </div>
       <Button type="submit" disabled={isPending} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}

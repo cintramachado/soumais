@@ -62,6 +62,7 @@ export const groupUpdateSchema = z.object({
   id: uuidField,
   name: nameField,
   active: z.boolean(),
+  responsibleTeacherId: z.union([uuidField, z.literal("")]).optional(),
 });
 
 export const studentSchema = z.object({

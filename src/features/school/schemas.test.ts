@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { classSchema, periodSchema, schoolYearSchema, studentSchema } from "./schemas";
+import { classSchema, groupUpdateSchema, periodSchema, schoolYearSchema, studentSchema } from "./schemas";
 
 const schoolYearId = "20000000-0000-4000-8000-000000000001";
 const classId = "30000000-0000-4000-8000-000000000001";
 
 describe("school entity schemas", () => {
+  it('validates a group responsible teacher identifier', () => {
+    expect(groupUpdateSchema.safeParse({ id: classId, name: 'Grupo A', active: true, responsibleTeacherId: schoolYearId }).success).toBe(true);
+    expect(groupUpdateSchema.safeParse({ id: classId, name: 'Grupo A', active: true, responsibleTeacherId: 'invalid' }).success).toBe(false);
+  });
   it("accepts a valid school year", () => {
     expect(schoolYearSchema.safeParse({
       year: 2026,

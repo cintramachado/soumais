@@ -26,6 +26,7 @@ export function DashboardShell({
         { href: "/teacher/periods", label: "Períodos", icon: CalendarDays },
         { href: "/teacher/classes", label: "Turmas e alunos", icon: Users },
         { href: "/teacher/parents", label: "Responsáveis", icon: Users },
+        { href: "/teacher/teachers", label: "Professores", icon: Users },
         { href: "/teacher/task-types", label: "Tipos de tarefa", icon: Tags },
         { href: "/teacher/tasks", label: "Tarefas", icon: ClipboardList },
         { href: "/teacher/score-settings", label: "Regras de pontos", icon: Settings },
