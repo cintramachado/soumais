@@ -39,7 +39,9 @@ $appPassword = $null
 
 try {
   Set-Location $webRoot
-  docker compose -f compose.yaml up --build --remove-orphans
+  docker compose -f compose.yaml up --build --detach --remove-orphans
+  if ($LASTEXITCODE -ne 0) { throw 'Docker Compose não conseguiu iniciar o Soul+.' }
+  Write-Output 'Soul+ iniciado em http://localhost:3002.'
 } finally {
   Remove-Item Env:NEXT_PUBLIC_SUPABASE_URL,Env:NEXT_PUBLIC_SITE_URL,Env:NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,Env:SUPABASE_SECRET_KEY,Env:SUPABASE_URL_INTERNAL,Env:SOULMAIS_SMTP_USER,Env:SOULMAIS_GMAIL_APP_PASSWORD,Env:SOULMAIS_PUBLIC_ORIGIN -ErrorAction SilentlyContinue
 }
