@@ -9,7 +9,7 @@ const roleLabels: Record<AppRole, string> = {
   parent: "Responsável",
 };
 
-export function DashboardHome({ profile, role, children }: { profile: Profile; role: AppRole; children?: ReactNode }) {
+export function DashboardHome({ profile, role, children, stats }: { profile: Profile; role: AppRole; children?: ReactNode; stats?: ReactNode }) {
   return (
     <section aria-labelledby="dashboard-title">
       <div className="border-b border-[#dce4de] pb-6">
@@ -18,7 +18,7 @@ export function DashboardHome({ profile, role, children }: { profile: Profile; r
           Olá, {profile.full_name.split(" ")[0]}
         </h1>
       </div>
-      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {stats ?? <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Alunos", "—"],
           ["Tarefas abertas", "—"],
@@ -30,7 +30,7 @@ export function DashboardHome({ profile, role, children }: { profile: Profile; r
             <p className="mt-4 text-2xl font-semibold text-[#315b51]">{value}</p>
           </div>
         ))}
-      </div>
+      </div>}
       {children ?? <div className="mt-8 flex min-h-64 flex-col items-center justify-center border border-dashed border-[#cbd6ce] bg-white px-5 py-10 text-center">
         <Image
           src="/brand/soul-mais-cristo.jpg"
