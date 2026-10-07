@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { saveParent } from '../actions';
 import { parentSchema } from '../schemas';
 
-export type ParentRecord = { id: string; name: string; phone: string | null; active: boolean; profile_id: string | null };
+export type ParentRecord = { id: string; name: string; email: string | null; phone: string | null; active: boolean; profile_id: string | null };
 
 export function ParentForm({ parent }: { parent?: ParentRecord }) {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function ParentForm({ parent }: { parent?: ParentRecord }) {
   const [message, setMessage] = useState('');
   const form = useForm<z.infer<typeof parentSchema>>({
     resolver: zodResolver(parentSchema),
-    defaultValues: { id: parent?.id, name: parent?.name ?? '', phone: parent?.phone ?? '', active: parent?.active ?? true },
+    defaultValues: { id: parent?.id, name: parent?.name ?? '', email: parent?.email ?? '', phone: parent?.phone ?? '', active: parent?.active ?? true },
   });
   const submit = form.handleSubmit((values) => {
     if (parent?.active && !values.active && !window.confirm('Inativar este responsável? Seu acesso aos alunos será bloqueado.')) return;
@@ -31,7 +31,7 @@ export function ParentForm({ parent }: { parent?: ParentRecord }) {
         if (result.error) form.setError('root', { message: result.error });
         else {
           setMessage(result.success ?? 'Salvo.');
-          if (!parent) form.reset({ name: '', phone: '', active: true });
+          if (!parent) form.reset({ name: '', email: '', phone: '', active: true });
           router.refresh();
         }
       } catch {
@@ -52,6 +52,11 @@ export function ParentForm({ parent }: { parent?: ParentRecord }) {
         {form.formState.errors.phone && <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>}
       </div>
       {parent && <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" {...form.register('active')} />Responsável ativo</label>}
+      <div className="space-y-2">
+        <Label htmlFor={`parent-email-${parent?.id ?? 'new'}`}>Email de contato (opcional)</Label>
+        <Input id={`parent-email-${parent?.id ?? 'new'}`} type="email" autoComplete="email" maxLength={254} {...form.register('email')} />
+        {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
+      </div>
       <div className="sm:col-span-2">
         <Button type="submit" disabled={pending} className="min-h-10">{pending && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}{parent ? 'Salvar alterações' : 'Cadastrar responsável'}</Button>
       </div>

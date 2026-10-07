@@ -10,7 +10,7 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
   const page = Math.max(1, Math.min(10000, Number.parseInt(params.page ?? '1') || 1));
   const search = (params.q ?? '').slice(0, 120).replace(/[%_]/g, '');
   const client = await createClient();
-  let query = client.from('parents').select('id,name,phone,active,profile_id', { count: 'exact' }).order('name').order('id');
+  let query = client.from('parents').select('id,name,email,phone,active,profile_id', { count: 'exact' }).order('name').order('id');
   if (search) query = query.ilike('name', `%${search}%`);
   const { data, error, count } = await query.range((page - 1) * 20, page * 20 - 1);
   const pageUrl = (value: number) => `/teacher/parents?${new URLSearchParams({ q: search, page: String(value) })}`;

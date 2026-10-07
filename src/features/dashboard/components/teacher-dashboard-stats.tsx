@@ -14,7 +14,7 @@ export function TeacherDashboardStats(props: { classId?: string; initial?: Dashb
 function Stats({ classId, initial }: { classId?: string; initial?: DashboardMetrics }) {
   const query = useQuery({
     queryKey: ['teacher-dashboard', classId ?? 'all'], initialData: initial,
-    refetchOnWindowFocus: true, staleTime: 0, retry: 1,
+    refetchOnWindowFocus: true, refetchOnReconnect: false, staleTime: 0, retry: 1,
     queryFn: async ({ signal }) => {
       const url = `/api/dashboard/metrics${classId ? `?classId=${encodeURIComponent(classId)}` : ''}`;
       const response = await fetch(url, { signal, cache: 'no-store' });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { contactEmailSchema } from '../../lib/validation/contact';
 
 const dateField = z.string().refine((value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -67,6 +68,7 @@ export const groupUpdateSchema = z.object({
 
 export const studentSchema = z.object({
   name: nameField,
+  email: contactEmailSchema,
   birthDate: dateField,
   classId: uuidField,
   groupId: z.union([uuidField, z.literal("")]).optional(),
@@ -75,6 +77,7 @@ export const studentSchema = z.object({
 export const studentUpdateSchema = z.object({
   id: uuidField,
   name: nameField,
+  email: contactEmailSchema,
   birthDate: dateField,
   active: z.boolean(),
 });

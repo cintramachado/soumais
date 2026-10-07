@@ -23,9 +23,10 @@ async function executeRpc(name: string, values: Record<string, unknown>): Promis
 export async function saveParent(input: unknown): Promise<ParentResult> {
   const parsed = parentSchema.safeParse(input);
   if (!parsed.success) return { error: 'Confira os dados do responsável.' };
-  return executeRpc('save_parent', {
+  return executeRpc('save_parent_contact', {
     p_id: parsed.data.id ?? null,
     p_name: parsed.data.name,
+    p_email: parsed.data.email || null,
     p_phone: parsed.data.phone || null,
     p_active: parsed.data.active,
   });

@@ -129,6 +129,7 @@ export function StudentForm({
     resolver: zodResolver(studentSchema),
     defaultValues: {
       name: "",
+      email: "",
       birthDate: "",
       classId,
       groupId: "",
@@ -140,7 +141,7 @@ export function StudentForm({
       const result = await createStudent(values);
       if (result.error) form.setError("root", { message: result.error });
       else {
-        form.reset({ name: "", birthDate: "", classId, groupId: "" });
+        form.reset({ name: "", email: "", birthDate: "", classId, groupId: "" });
         router.refresh();
       }
     });
@@ -152,6 +153,11 @@ export function StudentForm({
         <Label htmlFor="student-name">Nome completo</Label>
         <Input id="student-name" autoComplete="name" maxLength={120} {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+      </div>
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="student-email">Email de contato (opcional)</Label>
+        <Input id="student-email" type="email" autoComplete="email" maxLength={254} {...form.register("email")} />
+        {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="student-birth-date">Data de nascimento</Label>
@@ -284,11 +290,13 @@ export function GroupEditForm({
 export function StudentEditForm({
   id,
   name,
+  email,
   birthDate,
   active,
 }: {
   id: string;
   name: string;
+  email: string | null;
   birthDate: string;
   active: boolean;
 }) {
@@ -296,7 +304,7 @@ export function StudentEditForm({
   const [isPending, startTransition] = useTransition();
   const form = useForm<z.input<typeof studentUpdateSchema>>({
     resolver: zodResolver(studentUpdateSchema),
-    defaultValues: { id, name, birthDate, active },
+    defaultValues: { id, name, email: email ?? "", birthDate, active },
   });
   const onSubmit = form.handleSubmit((values) => {
     startTransition(async () => {
@@ -307,11 +315,16 @@ export function StudentEditForm({
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-3 sm:grid-cols-[1fr_220px_auto] sm:items-end">
+    <form onSubmit={onSubmit} noValidate className="grid gap-3 sm:grid-cols-2 sm:items-end">
       <div className="space-y-2">
         <Label htmlFor={`edit-student-name-${id}`}>Nome</Label>
         <Input id={`edit-student-name-${id}`} maxLength={120} {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`edit-student-email-${id}`}>Email de contato (opcional)</Label>
+        <Input id={`edit-student-email-${id}`} type="email" maxLength={254} {...form.register("email")} />
+        {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
       </div>
       <div className="space-y-2">
         <Label htmlFor={`edit-student-birth-${id}`}>Nascimento</Label>

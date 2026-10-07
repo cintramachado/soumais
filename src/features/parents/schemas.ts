@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { contactEmailSchema } from '../../lib/validation/contact';
 
 export const parentSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(1, 'Informe o nome.').max(120, 'Use até 120 caracteres.'),
   phone: z.string().trim().max(30, 'Use até 30 caracteres.'),
+  email: contactEmailSchema,
   active: z.boolean(),
 });
 export const parentLinkSchema = z.object({

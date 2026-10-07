@@ -193,11 +193,12 @@ export async function createStudent(input: unknown): Promise<MutationResult> {
   await requireProfile("teacher");
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_student_with_enrollment", {
+  const { data, error } = await supabase.rpc("create_student_contact", {
     p_name: parsed.data.name,
     p_birth_date: parsed.data.birthDate,
     p_class_id: parsed.data.classId,
     p_group_id: parsed.data.groupId || null,
+    p_email: parsed.data.email || null,
   });
   if (error) {
     reportFailure("create student", error);
@@ -215,17 +216,19 @@ export async function updateStudent(input: unknown): Promise<MutationResult> {
 
   const supabase = await createClient();
   const { id, ...values } = parsed.data;
-  const { error } = await supabase.from("students").update({
-    name: values.name,
-    birth_date: values.birthDate,
-    active: values.active,
-  }).eq("id", id);
+  const { error } = await supabase.rpc("update_student_contact", {
+    p_id: id,
+    p_name: values.name,
+    p_birth_date: values.birthDate,
+    p_email: values.email || null,
+  });
   if (error) {
     reportFailure("update student", error);
     return { error: "Não foi possível atualizar o aluno." };
   }
   revalidatePath("/teacher/classes");
   revalidatePath("/teacher/students");
+  revalidatePath("/teacher/classes", "layout");
   return { success: "Aluno atualizado." };
 }
 

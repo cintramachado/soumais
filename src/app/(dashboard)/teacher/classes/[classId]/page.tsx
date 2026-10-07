@@ -19,7 +19,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
     supabase.from("classes").select("id, name, active, school_year_id, school_years!inner(year)").eq("id", classId).maybeSingle(),
     supabase.from("groups").select("id, name, active, responsible_teacher:teachers!groups_responsible_teacher_id_fkey(id,name,active)").eq("class_id", classId).order("name").limit(100),
     supabase.from("student_enrollments")
-      .select("id, students!inner(id, name, birth_date, active), student_groups(group_id, groups(id, name))")
+      .select("id, students!inner(id, name, email, birth_date, active), student_groups(group_id, groups(id, name))")
       .eq("class_id", classId)
       .eq("active", true)
       .order("enrolled_at", { ascending: true })
@@ -128,7 +128,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
         ) : (
           <div className="divide-y divide-[#dce4de] border-y border-[#dce4de] bg-white">
             {enrollmentsResult.data.map((enrollment) => {
-              const student = enrollment.students as unknown as { id: string; name: string; birth_date: string; active: boolean };
+              const student = enrollment.students as unknown as { id: string; name: string; email: string | null; birth_date: string; active: boolean };
               const studentGroups = (enrollment.student_groups ?? []).map((membership) => {
                 const group = membership.groups as unknown as { id: string; name: string } | null;
                 return group ? { id: group.id, name: group.name } : null;
@@ -139,6 +139,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <h3 className="font-medium">{student.name}</h3>
+                      {student.email && <p className="mt-1 break-all text-sm text-muted-foreground">{student.email}</p>}
                       <p className="mt-1 text-sm text-[#667873]">
                         Nascimento: {formatDatePtBr(student.birth_date)}
                         {!student.active && " · Inativo"}
@@ -150,7 +151,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
                           Editar
                         </summary>
                         <div className="absolute right-4 z-10 mt-2 w-[min(92vw,42rem)] border border-[#dce4de] bg-white p-4 shadow-md sm:right-8">
-                          <StudentEditForm id={student.id} name={student.name} birthDate={student.birth_date.slice(0, 10)} active={student.active} />
+                          <StudentEditForm id={student.id} name={student.name} email={student.email} birthDate={student.birth_date.slice(0, 10)} active={student.active} />
                         </div>
                       </details>
                       <ActiveToggle kind="student" id={student.id} active={student.active} label={`aluno ${student.name}`} />

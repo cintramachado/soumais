@@ -44,6 +44,12 @@ As migrations 005/006/007 suportam provisionamento Auth em duas etapas, respons�
 
 ## Desenvolvimento
 
+## Indicadores do dashboard
+
+A Visão geral do professor mostra alunos ativos das turmas autorizadas, tarefas abertas, pendências e aproveitamento. Os pontos incluem ajustes manuais e excluem tarefas canceladas. Alunos em múltiplos grupos não são contados em duplicidade. Sem turma selecionada, a base inclui todos os anos letivos ativos da organização.
+
+Os números são consultados na abertura/retorno ao dashboard e ao voltar à aba do navegador, sem atualização periódica. O botão de atualizar permite consulta manual. A API usa `private, no-store` e verifica a autorização por turma. Migration: 019.
+
 ## Tarefas
 
 Em `Tipos de tarefa`, cadastre a pontuação padrão. Em `Tarefas`, crie um rascunho com tipo, período, datas, pontuação máxima e destinos: turma inteira, grupos ou alunos específicos. Destinos podem se sobrepor: cada aluno recebe somente uma atribuição. A busca de destinos é paginada e consulta apenas turmas autorizadas do ano letivo do período.
