@@ -59,7 +59,7 @@ export function ClassForm({ schoolYears }: { schoolYears: SchoolYearOption[] }) 
         <Input id="class-name" maxLength={120} placeholder="Ex.: Adolescentes" {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
       </div>
-      <Button disabled={isPending || schoolYears.length === 0} className={submitClassName}>
+      <Button type="submit" disabled={isPending || schoolYears.length === 0} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Cadastrar turma
       </Button>

@@ -62,6 +62,16 @@ Abra `http://localhost:3000`. Sem variáveis Supabase, a aplicação mostra uma 
 
 ## Qualidade
 
+## Pontuação e histórico
+
+No detalhe de uma tarefa publicada, clique no aluno atribuído para registrar o resultado, ajustar a pontuação ou consultar o histórico. Resultados de tarefas ativas ou encerradas podem ser corrigidos; tarefas canceladas mantêm o histórico, mas não permitem lançamentos nem entram nas métricas.
+
+No prazo concede 100% do máximo, atraso usa a política associada à tarefa e não realizada/pendente concede zero. Ajuste manual prevalece, inclusive quando é zero, e deve ficar entre zero e o máximo da tarefa. Adicionar, alterar ou remover o ajuste exige motivo. A data de realização deve ser coerente com a situação escolhida e é armazenada como meia-noite no fuso da organização. O cálculo usa duas casas decimais e arredondamento half-up.
+
+Em `Regras de pontos`, configure o percentual concedido em atraso para novas tarefas. Uma nova versão é criada; tarefas existentes (inclusive rascunhos) continuam usando a política anterior. Não há recálculo silencioso de resultados passados.
+
+As migrations 012/013 implementam cálculo, RPCs com locks, histórico append-only e métricas sob RLS. Totais por aluno/tarefa/período, aproveitamento e pendências são agregados dinamicamente. Percentuais de realização/no prazo usam todas as atribuições válidas como denominador, e bases vazias retornam zero. Lançamento rápido em lote pertence à próxima fase.
+
 ```powershell
 npm run lint
 npm test
