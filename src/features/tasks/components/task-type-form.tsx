@@ -38,7 +38,7 @@ export function TaskTypeForm({ taskType }: { taskType?: TaskTypeOption }) {
     <div className="space-y-2"><Label htmlFor={`type-score-${suffix}`}>Pontuação padrão</Label><Input id={`type-score-${suffix}`} type="number" min={0} step="0.01" {...form.register('defaultScore', { valueAsNumber: true })} />{form.formState.errors.defaultScore && <p className="text-sm text-destructive">{form.formState.errors.defaultScore.message}</p>}</div>
     <div className="space-y-2 sm:col-span-2"><Label htmlFor={`type-description-${suffix}`}>Descrição</Label><Input id={`type-description-${suffix}`} {...form.register('description')} maxLength={2000} /></div>
     {taskType && <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" {...form.register('active')} />Tipo ativo</label>}
-    <div className="sm:col-span-2"><Button disabled={pending} className="min-h-10">{pending ? 'Salvando…' : 'Salvar tipo'}</Button></div>
+    <div className="sm:col-span-2"><Button type="submit" disabled={pending} className="min-h-10">{pending ? 'Salvando…' : 'Salvar tipo'}</Button></div>
     {form.formState.errors.root && <p role="alert" className="text-sm text-destructive sm:col-span-2">{form.formState.errors.root.message}</p>}
     {message && <p role="status" className="text-sm text-primary sm:col-span-2">{message}</p>}
   </form>;

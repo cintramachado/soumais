@@ -37,7 +37,7 @@ export function AdjustmentForm({ id, maximumScore, manualScore, calculatedScore 
     {manualScore !== null && <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={remove} disabled={pending} onChange={(event) => { form.setValue('remove', event.target.checked); form.setValue('manualScore', event.target.checked ? undefined : manualScore); }} />Remover ajuste manual</label>}
     {!remove && <div className="space-y-2"><Label htmlFor="manual-score">Pontuação ajustada</Label><Input id="manual-score" type="number" min={0} max={maximumScore} step="0.01" disabled={pending} {...form.register('manualScore', { valueAsNumber: true })} />{form.formState.errors.manualScore && <p className="text-sm text-destructive">{form.formState.errors.manualScore.message}</p>}</div>}
     <div className="space-y-2"><Label htmlFor="manual-reason">Motivo obrigatório</Label><textarea id="manual-reason" {...form.register('reason')} disabled={pending} maxLength={2000} rows={3} className="w-full rounded-md border bg-white p-3 text-sm" />{form.formState.errors.reason && <p className="text-sm text-destructive">{form.formState.errors.reason.message}</p>}</div>
-    <Button disabled={pending} className="min-h-10">{pending ? 'Salvando…' : remove ? 'Remover ajuste' : 'Salvar ajuste'}</Button>
+    <Button type="submit" disabled={pending} className="min-h-10">{pending ? 'Salvando…' : remove ? 'Remover ajuste' : 'Salvar ajuste'}</Button>
     {form.formState.errors.root && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
     {message && <p role="status" className="text-sm text-primary">{message}</p>}
   </form>;

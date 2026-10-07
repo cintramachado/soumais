@@ -53,7 +53,7 @@ export function ParentForm({ parent }: { parent?: ParentRecord }) {
       </div>
       {parent && <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" {...form.register('active')} />Responsável ativo</label>}
       <div className="sm:col-span-2">
-        <Button disabled={pending} className="min-h-10">{pending && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}{parent ? 'Salvar alterações' : 'Cadastrar responsável'}</Button>
+        <Button type="submit" disabled={pending} className="min-h-10">{pending && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}{parent ? 'Salvar alterações' : 'Cadastrar responsável'}</Button>
       </div>
       {form.formState.errors.root && <p role="alert" className="text-sm text-destructive sm:col-span-2">{form.formState.errors.root.message}</p>}
       {message && <p role="status" className="text-sm text-primary sm:col-span-2">{message}</p>}

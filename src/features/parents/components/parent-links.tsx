@@ -50,7 +50,7 @@ export function ParentLinks({ parentId, students, links, active }: { parentId: s
       {active && <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2"><Label htmlFor="link-student">Aluno</Label><select id="link-student" className="h-10 w-full min-w-0 rounded-md border bg-white px-2 text-sm" {...form.register('studentId')}><option value="">Selecione</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}</select>{form.formState.errors.studentId && <p className="text-sm text-destructive">{form.formState.errors.studentId.message}</p>}</div>
         <div className="space-y-2"><Label htmlFor="link-relationship">Parentesco</Label><Input id="link-relationship" placeholder="Ex.: mãe, pai, responsável legal" {...form.register('relationship')} maxLength={60} />{form.formState.errors.relationship && <p className="text-sm text-destructive">{form.formState.errors.relationship.message}</p>}</div>
-        <div className="sm:col-span-2"><Button disabled={pending || !students.length} className="min-h-10">{pending ? 'Salvando…' : 'Salvar vínculo'}</Button></div>
+        <div className="sm:col-span-2"><Button type="submit" disabled={pending || !students.length} className="min-h-10">{pending ? 'Salvando…' : 'Salvar vínculo'}</Button></div>
       </form>}
       {form.formState.errors.root && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
       {message && <p role="status" className="text-sm text-primary">{message}</p>}

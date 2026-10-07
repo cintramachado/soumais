@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -33,16 +33,27 @@ type GroupOption = { id: string; name: string };
 export function ClassForm({ schoolYears }: { schoolYears: SchoolYearOption[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [successMessage, setSuccessMessage] = useState("");
   const form = useForm<z.input<typeof classSchema>>({
     resolver: zodResolver(classSchema),
     defaultValues: { schoolYearId: schoolYears[0]?.id ?? "", name: "" },
   });
 
   const onSubmit = form.handleSubmit((values) => {
+    form.clearErrors("root");
+    setSuccessMessage("");
     startTransition(async () => {
-      const result = await createClass(values);
-      if (result.error) form.setError("root", { message: result.error });
-      else router.refresh();
+      try {
+        const result = await createClass(values);
+        if (result.error) form.setError("root", { message: result.error });
+        else {
+          form.reset({ schoolYearId: values.schoolYearId, name: "" });
+          setSuccessMessage(result.success ?? "Turma cadastrada.");
+          router.refresh();
+        }
+      } catch {
+        form.setError("root", { message: "Não foi possível cadastrar a turma. Tente novamente." });
+      }
     });
   });
 
@@ -53,6 +64,7 @@ export function ClassForm({ schoolYears }: { schoolYears: SchoolYearOption[] }) 
         <select id="class-school-year" className={selectClassName} {...form.register("schoolYearId")}>
           {schoolYears.map((year) => <option key={year.id} value={year.id}>{year.year}</option>)}
         </select>
+        {form.formState.errors.schoolYearId && <FieldError>Selecione um ano letivo válido.</FieldError>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="class-name">Nome da turma</Label>
@@ -64,6 +76,7 @@ export function ClassForm({ schoolYears }: { schoolYears: SchoolYearOption[] }) 
         Cadastrar turma
       </Button>
       {form.formState.errors.root && <FormError>{form.formState.errors.root.message}</FormError>}
+      {successMessage && <p role="status" className="text-sm text-primary sm:col-span-3">{successMessage}</p>}
     </form>
   );
 }
@@ -94,7 +107,7 @@ export function GroupForm({ classId }: { classId: string }) {
         <Input id="group-name" maxLength={120} placeholder="Ex.: Grupo A" {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
       </div>
-      <Button disabled={isPending} className={submitClassName}>
+      <Button type="submit" disabled={isPending} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Criar grupo
       </Button>
@@ -152,7 +165,7 @@ export function StudentForm({
           {groups.filter((group) => group.id).map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
         </select>
       </div>
-      <Button disabled={isPending} className={`${submitClassName} sm:col-span-2 sm:justify-self-start`}>
+      <Button type="submit" disabled={isPending} className={`${submitClassName} sm:col-span-2 sm:justify-self-start`}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Cadastrar aluno
       </Button>
@@ -202,7 +215,7 @@ export function ClassEditForm({
         <Input id={`edit-class-${id}`} maxLength={120} {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
       </div>
-      <Button disabled={isPending} className={submitClassName}>
+      <Button type="submit" disabled={isPending} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Salvar
       </Button>
@@ -241,7 +254,7 @@ export function GroupEditForm({
         <Input id={`edit-group-${id}`} maxLength={120} {...form.register("name")} />
         {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
       </div>
-      <Button disabled={isPending} className={submitClassName}>
+      <Button type="submit" disabled={isPending} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Salvar
       </Button>
@@ -287,7 +300,7 @@ export function StudentEditForm({
         <Input id={`edit-student-birth-${id}`} type="date" {...form.register("birthDate")} />
         {form.formState.errors.birthDate && <FieldError>{form.formState.errors.birthDate.message}</FieldError>}
       </div>
-      <Button disabled={isPending} className={submitClassName}>
+      <Button type="submit" disabled={isPending} className={submitClassName}>
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Salvar
       </Button>
