@@ -4,7 +4,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getProfile, getRolePath } from "@/lib/auth/profile";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendParentAccessEmail } from "@/lib/email/parent-access";
 import { newPasswordSchema, recoverySchema, signInSchema } from "@/lib/validation/auth";
 
 export type AuthActionResult = { error?: string; success?: string };
@@ -15,7 +17,7 @@ export async function signInAction(input: unknown): Promise<AuthActionResult> {
 
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword(parsed.data);
-  if (signInError) return { error: "Email ou senha inválidos." };
+  if (signInError) return { error: "Não foi possível entrar. Confira o email e a senha ou use ‘Esqueci minha senha’. Se ainda não recebeu acesso, solicite à escola a criação da sua conta." };
 
   const profile = await getProfile();
   if (!profile) {
@@ -40,10 +42,38 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const origin = host ? `${protocol}://${host}` : "http://localhost:3000";
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : "http://localhost:3003");
+  const redirectTo = new URL("/auth/invite", origin).toString();
+
+  if (process.platform === "win32") {
+    try {
+      const admin = createAdminClient();
+      const { data, error } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: parsed.data.email,
+        options: { redirectTo },
+      });
+      if (error || !data.user || !data.properties?.action_link) {
+        if (process.env.NODE_ENV === "development") console.error("Password recovery link generation failed", error?.code);
+        return { success: "Se o email estiver cadastrado, você receberá as instruções." };
+      }
+
+      await sendParentAccessEmail({
+        email: parsed.data.email,
+        actionLink: data.properties.action_link,
+        isRecovery: true,
+      });
+      return { success: "Se o email estiver cadastrado, você receberá as instruções." };
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Password recovery email failed", error instanceof Error ? error.name : "UnknownError");
+      }
+      return { error: "Não foi possível solicitar a recuperação agora." };
+    }
+  }
 
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    redirectTo,
   });
 
   if (error) return { error: "Não foi possível solicitar a recuperação agora." };

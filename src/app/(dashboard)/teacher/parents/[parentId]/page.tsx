@@ -37,6 +37,6 @@ export default async function ParentDetailPage({ params, searchParams }: { param
       <nav aria-label="Paginação de alunos disponíveis" className="flex justify-between text-sm">{page > 1 ? <Link href={url(page - 1, linksPage)}>Alunos anteriores</Link> : <span />}{page * 20 < (studentsResult.count ?? 0) && <Link href={url(page + 1, linksPage)}>Mais alunos</Link>}</nav>
       <nav aria-label="Paginação de vínculos" className="flex justify-between text-sm">{linksPage > 1 ? <Link href={url(page, linksPage - 1)}>Vínculos anteriores</Link> : <span />}{linksPage * 20 < (linksResult.count ?? 0) && <Link href={url(page, linksPage + 1)}>Mais vínculos</Link>}</nav>
     </section>
-    <section className="space-y-4"><h2 className="text-lg font-semibold">Conta de acesso</h2>{parent.profile_id ? <p className="text-sm text-muted-foreground">Conta associada a este cadastro.</p> : <ParentAccount parentId={parentId} email={parent.email ?? ''} />}</section>
+    <section className="space-y-4"><h2 className="text-lg font-semibold">Conta de acesso</h2><ParentAccount parentId={parentId} email={parent.email ?? ''} alreadyLinked={Boolean(parent.profile_id)} /></section>
   </div>;
 }

@@ -153,7 +153,7 @@ export function LoginForm({
             </Button>
           </form>
           <p className="mt-8 text-center text-xs leading-5 text-[#71817c]">
-            Seu acesso é criado pela administração do Soul+.
+            O email informado no cadastro escolar é apenas para contato e não cria um login. Peça à escola para liberar seu acesso.
           </p>
         </div>
       </section>
