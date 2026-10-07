@@ -52,6 +52,11 @@ export async function getProfile() {
     return null;
   }
 
+  if (membership.role === 'teacher') {
+    const { data: teacherId, error: teacherError } = await supabase.rpc('current_teacher_id');
+    if (teacherError || typeof teacherId !== 'string') return null;
+  }
+
   return { ...data, role: membership.role as AppRole, organizationId } as Profile;
 }
 
