@@ -10,6 +10,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AccountCredentialsButton } from "@/features/auth/components/account-credentials-button";
 import {
   createClass,
   createGroup,
@@ -125,6 +126,7 @@ export function StudentForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [newStudent, setNewStudent] = useState<{ id: string; name: string; email: string } | null>(null);
   const form = useForm<z.input<typeof studentSchema>>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
@@ -141,6 +143,7 @@ export function StudentForm({
       const result = await createStudent(values);
       if (result.error) form.setError("root", { message: result.error });
       else {
+        if (result.id) setNewStudent({ id: result.id, name: values.name, email: values.email ?? "" });
         form.reset({ name: "", email: "", birthDate: "", classId, groupId: "" });
         router.refresh();
       }
@@ -175,6 +178,10 @@ export function StudentForm({
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Cadastrar aluno
       </Button>
+      {newStudent && <div className="space-y-2 sm:col-span-2">
+        <p role="status" className="text-sm text-primary">{newStudent.name} foi cadastrado.</p>
+        <AccountCredentialsButton recordId={newStudent.id} email={newStudent.email || null} active linked={false} kind="student" />
+      </div>}
       {form.formState.errors.root && <FormError>{form.formState.errors.root.message}</FormError>}
     </form>
   );
@@ -291,12 +298,14 @@ export function StudentEditForm({
   id,
   name,
   email,
+  profileId,
   birthDate,
   active,
 }: {
   id: string;
   name: string;
   email: string | null;
+  profileId: string | null;
   birthDate: string;
   active: boolean;
 }) {
@@ -335,6 +344,7 @@ export function StudentEditForm({
         {isPending && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         Salvar
       </Button>
+      <AccountCredentialsButton recordId={id} email={email} active={active} linked={Boolean(profileId)} kind="student" />
       {form.formState.errors.root && <FormError>{form.formState.errors.root.message}</FormError>}
     </form>
   );

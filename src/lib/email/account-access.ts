@@ -2,7 +2,7 @@ import 'server-only';
 
 import nodemailer from 'nodemailer';
 
-export async function sendParentAccessEmail({
+export async function sendAccountAccessEmail({
   email,
   name,
   actionLink,
@@ -35,7 +35,7 @@ export async function sendParentAccessEmail({
         '',
         isRecovery
           ? 'Use o link abaixo para criar ou atualizar sua senha de acesso ao Soul+.'
-          : 'A escola convidou você para acessar o Soul+. Use o link abaixo para criar sua senha.',
+          : 'Você recebeu um convite para acessar o Soul+. Use o link abaixo para criar sua senha.',
         '',
         actionLink,
         '',

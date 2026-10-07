@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { SchoolLoadError, formatDatePtBr } from '@/features/school/components/school-empty-state';
+import { SchoolLoadError } from '@/features/school/components/school-empty-state';
 import { requireProfile } from "@/lib/auth/profile";
 import { ParentStudentDashboard } from '@/features/parents/components/parent-student-dashboard';
 import { parentStudentDashboardSchema } from '@/features/parents/schemas';

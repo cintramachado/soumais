@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { requireProfile } from "@/lib/auth/profile";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendAccountCredentials } from "@/lib/auth/account-credentials";
 import {
   activeStateSchema,
   classSchema,
@@ -16,6 +19,7 @@ import {
   schoolYearUpdateSchema,
   studentGroupSchema,
   studentGroupRemoveSchema,
+  studentInviteSchema,
   studentSchema,
   studentUpdateSchema,
 } from "@/features/school/schemas";
@@ -230,6 +234,65 @@ export async function updateStudent(input: unknown): Promise<MutationResult> {
   revalidatePath("/teacher/students");
   revalidatePath("/teacher/classes", "layout");
   return { success: "Aluno atualizado." };
+}
+
+export async function inviteStudentAccount(input: unknown): Promise<MutationResult> {
+  const parsed = studentInviteSchema.safeParse(input);
+  if (!parsed.success) return { error: "Cadastro de aluno inválido." };
+  await requireProfile("teacher");
+
+  const client = await createClient();
+  const { data: student, error: studentError } = await client.from('students')
+    .select('id,name,email,active,profile_id').eq('id', parsed.data.studentId).maybeSingle();
+  if (studentError || !student) return { error: 'Não foi possível localizar este aluno nas suas turmas.' };
+  if (!student.active) return { error: 'Ative o cadastro antes de enviar o convite.' };
+  if (!student.email) return { error: 'Cadastre um email antes de enviar o convite.' };
+
+  let admin;
+  try { admin = createAdminClient(); }
+  catch { return { error: 'A chave administrativa do Supabase não está configurada no servidor.' }; }
+
+  const { data: account, error: accountError } = await admin.from('profiles').select('id,email,role,active')
+    .eq('email', student.email.toLowerCase()).maybeSingle();
+  if (accountError) return { error: 'Não foi possível validar a conta do aluno.' };
+  if (account && (account.role !== 'student' || !account.active)) {
+    return { error: 'Já existe uma conta com esse email que não está provisionada como aluno ativo.' };
+  }
+  if (student.profile_id && (!account || account.id !== student.profile_id)) {
+    return { error: 'O email do cadastro não corresponde à conta vinculada.' };
+  }
+
+  if (account && !student.profile_id) {
+    const { error } = await client.rpc('attach_student_account', { p_student_id: student.id, p_email: student.email });
+    if (error) return { error: 'Não foi possível vincular a conta existente ao aluno.' };
+  }
+
+  const requestHeaders = await headers();
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
+  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'http';
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : 'http://localhost:3003');
+  const result = await sendAccountCredentials({
+    email: student.email,
+    name: student.name,
+    role: 'student',
+    redirectTo: new URL('/auth/invite', origin).toString(),
+    isRecovery: Boolean(account?.active),
+  });
+  if (result.error) return { error: result.error === 'account_exists'
+    ? 'Já existe uma conta com esse email. Atualize a página e tente reenviar o acesso.'
+    : 'Não foi possível enviar o acesso. Confira o SMTP e tente novamente.' };
+
+  if (!student.profile_id && !account) {
+    const { error } = await client.rpc('attach_student_account', { p_student_id: student.id, p_email: student.email });
+    if (error) {
+      if (process.env.NODE_ENV === 'development') reportFailure('link student account', error);
+      return { error: 'A conta foi criada, mas não foi possível vinculá-la ao aluno. Atualize e tente novamente.' };
+    }
+  }
+
+  revalidatePath('/teacher/classes', 'layout');
+  revalidatePath('/student');
+  return { success: account ? 'Link para criar ou atualizar a senha enviado.' : 'Convite enviado ao aluno.' };
 }
 
 export async function addStudentToGroup(input: unknown): Promise<MutationResult> {

@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { requireProfile } from '@/lib/auth/profile';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendParentAccessEmail } from '@/lib/email/parent-access';
+import { sendAccountAccessEmail } from '@/lib/email/account-access';
 import { parentAccountSchema, parentInviteSchema, parentLinkSchema, parentRemoveLinkSchema, parentSchema } from './schemas';
 
 export type ParentResult = { error?: string; success?: string };
@@ -196,7 +196,7 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
 
   if (process.platform === 'win32') {
     try {
-      await sendParentAccessEmail({ email: parent.email, name: parent.name, actionLink, isRecovery });
+      await sendAccountAccessEmail({ email: parent.email, name: parent.name, actionLink, isRecovery });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Parent invitation email failed', error instanceof Error ? error.name : 'UnknownError');

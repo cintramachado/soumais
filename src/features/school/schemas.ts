@@ -86,5 +86,6 @@ export const studentGroupSchema = z.object({
   enrollmentId: uuidField,
   groupId: uuidField,
 });
+export const studentInviteSchema = z.object({ studentId: uuidField });
 
 export const studentGroupRemoveSchema = studentGroupSchema;

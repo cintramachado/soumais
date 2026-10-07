@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getProfile, getRolePath } from "@/lib/auth/profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { sendParentAccessEmail } from "@/lib/email/parent-access";
+import { sendAccountAccessEmail } from "@/lib/email/account-access";
 import { newPasswordSchema, recoverySchema, signInSchema } from "@/lib/validation/auth";
 
 export type AuthActionResult = { error?: string; success?: string };
@@ -58,7 +58,7 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
         return { success: "Se o email estiver cadastrado, você receberá as instruções." };
       }
 
-      await sendParentAccessEmail({
+      await sendAccountAccessEmail({
         email: parsed.data.email,
         actionLink: data.properties.action_link,
         isRecovery: true,

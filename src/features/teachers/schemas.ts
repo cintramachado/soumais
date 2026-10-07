@@ -8,3 +8,4 @@ export const teacherSchema = z.object({
   active: z.boolean(),
 });
 export const teacherClassSchema = z.object({ teacherId: z.uuid(), classId: z.uuid('Selecione uma turma.'), remove: z.boolean() });
+export const teacherInviteSchema = z.object({ teacherId: z.uuid() });
