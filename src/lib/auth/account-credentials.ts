@@ -18,14 +18,15 @@ export async function sendAccountCredentials({
   redirectTo: string;
   isRecovery: boolean;
 }): Promise<{ error?: string }> {
-  if (process.platform !== 'win32' && isRecovery) {
+  const directDelivery = process.env.SOULMAIS_EMAIL_DELIVERY_MODE === 'direct';
+  if (!directDelivery && isRecovery) {
     const client = await createClient();
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
     return error ? { error: 'email_send_failed' } : {};
   }
 
   const admin = createAdminClient();
-  if (process.platform === 'win32') {
+  if (directDelivery) {
     const generatedResult = isRecovery
       ? await admin.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo } })
       : await admin.auth.admin.generateLink({ type: 'invite', email, options: { data: { full_name: name }, redirectTo } });

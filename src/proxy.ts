@@ -1,14 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getServerSupabaseConfig, getSupabaseCookieName } from "@/lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
-  const config = getSupabaseConfig();
+  const config = getServerSupabaseConfig();
   if (!config) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
+  const cookieName = getSupabaseCookieName();
   const supabase = createServerClient(config.url, config.key, {
+    ...(cookieName ? { cookieOptions: { name: cookieName } } : {}),
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -32,6 +34,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icons/|brand/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icons/|brand/|auth/v1/|rest/v1/|storage/v1/|functions/v1/|graphql/v1).*)",
   ],
 };

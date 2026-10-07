@@ -28,6 +28,7 @@ $adminKey = $Matches[2]
 $env:SUPABASE_SECRET_KEY = $adminKey
 $env:SOULMAIS_SMTP_USER = 'soulmaisespacoalpha@gmail.com'
 $env:NODE_USE_SYSTEM_CA = '1'
+$env:SOULMAIS_EMAIL_DELIVERY_MODE = 'direct'
 $env:NEXT_PUBLIC_SITE_URL = 'http://localhost:3003'
 $adminKey = $null
 $appPassword = $null
@@ -36,5 +37,5 @@ try {
   Set-Location $webRoot
   npm run start -- --port 3003
 } finally {
-  Remove-Item Env:SUPABASE_SECRET_KEY,Env:SOULMAIS_GMAIL_APP_PASSWORD,Env:SOULMAIS_SMTP_USER,Env:NODE_USE_SYSTEM_CA,Env:NEXT_PUBLIC_SITE_URL -ErrorAction SilentlyContinue
+  Remove-Item Env:SUPABASE_SECRET_KEY,Env:SOULMAIS_GMAIL_APP_PASSWORD,Env:SOULMAIS_SMTP_USER,Env:NODE_USE_SYSTEM_CA,Env:SOULMAIS_EMAIL_DELIVERY_MODE,Env:NEXT_PUBLIC_SITE_URL -ErrorAction SilentlyContinue
 }

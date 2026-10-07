@@ -3,15 +3,17 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getServerSupabaseConfig, getSupabaseCookieName } from "@/lib/supabase/config";
 
 export async function createClient() {
-  const config = getSupabaseConfig();
+  const config = getServerSupabaseConfig();
   if (!config) throw new Error("Supabase environment is not configured.");
 
   const cookieStore = await cookies();
 
+  const cookieName = getSupabaseCookieName();
   return createServerClient(config.url, config.key, {
+    ...(cookieName ? { cookieOptions: { name: cookieName } } : {}),
     cookies: {
       getAll() {
         return cookieStore.getAll();

@@ -2,6 +2,19 @@ import 'server-only';
 
 import nodemailer from 'nodemailer';
 
+function toPublicAuthActionLink(actionLink: string) {
+  const internalUrl = process.env.SUPABASE_URL_INTERNAL;
+  const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!internalUrl || !publicUrl) return actionLink;
+
+  const link = new URL(actionLink);
+  if (link.origin !== new URL(internalUrl).origin) return actionLink;
+  const publicOrigin = new URL(publicUrl);
+  link.protocol = publicOrigin.protocol;
+  link.host = publicOrigin.host;
+  return link.toString();
+}
+
 export async function sendAccountAccessEmail({
   email,
   name,
@@ -37,7 +50,7 @@ export async function sendAccountAccessEmail({
           ? 'Use o link abaixo para criar ou atualizar sua senha de acesso ao Soul+.'
           : 'Você recebeu um convite para acessar o Soul+. Use o link abaixo para criar sua senha.',
         '',
-        actionLink,
+        toPublicAuthActionLink(actionLink),
         '',
         'Se você não esperava esta mensagem, ignore-a.',
       ].join('\n'),

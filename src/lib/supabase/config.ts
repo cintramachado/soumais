@@ -7,3 +7,13 @@ export function getSupabaseConfig() {
   if (!url || !key) return null;
   return { url, key };
 }
+
+export function getServerSupabaseConfig() {
+  const config = getSupabaseConfig();
+  if (!config) return null;
+  return { ...config, url: process.env.SUPABASE_URL_INTERNAL ?? config.url };
+}
+
+export function getSupabaseCookieName() {
+  return process.env.NEXT_PUBLIC_SUPABASE_COOKIE_NAME;
+}

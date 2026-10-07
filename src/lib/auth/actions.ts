@@ -4,9 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getProfile, getRolePath } from "@/lib/auth/profile";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { sendAccountAccessEmail } from "@/lib/email/account-access";
+import { sendAccountCredentials } from "@/lib/auth/account-credentials";
 import { newPasswordSchema, recoverySchema, signInSchema } from "@/lib/validation/auth";
 
 export type AuthActionResult = { error?: string; success?: string };
@@ -45,24 +44,16 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : "http://localhost:3003");
   const redirectTo = new URL("/auth/invite", origin).toString();
 
-  if (process.platform === "win32") {
+  if (process.env.SOULMAIS_EMAIL_DELIVERY_MODE === "direct") {
     try {
-      const admin = createAdminClient();
-      const { data, error } = await admin.auth.admin.generateLink({
-        type: "recovery",
+      const result = await sendAccountCredentials({
         email: parsed.data.email,
-        options: { redirectTo },
-      });
-      if (error || !data.user || !data.properties?.action_link) {
-        if (process.env.NODE_ENV === "development") console.error("Password recovery link generation failed", error?.code);
-        return { success: "Se o email estiver cadastrado, você receberá as instruções." };
-      }
-
-      await sendAccountAccessEmail({
-        email: parsed.data.email,
-        actionLink: data.properties.action_link,
+        name: "",
+        role: "parent",
+        redirectTo,
         isRecovery: true,
       });
+      if (result.error && process.env.NODE_ENV === "development") console.error("Password recovery email failed", result.error);
       return { success: "Se o email estiver cadastrado, você receberá as instruções." };
     } catch (error) {
       if (process.env.NODE_ENV === "development") {

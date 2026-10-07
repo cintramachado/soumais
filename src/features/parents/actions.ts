@@ -99,7 +99,8 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : 'http://localhost:3003');
   const redirectTo = new URL('/auth/invite', origin).toString();
 
-  if (parent.profile_id && process.platform !== 'win32') {
+  const directDelivery = process.env.SOULMAIS_EMAIL_DELIVERY_MODE === 'direct';
+  if (parent.profile_id && !directDelivery) {
     const { error } = await client.auth.resetPasswordForEmail(parent.email, { redirectTo });
     if (error) return { error: 'Não foi possível enviar o link de senha. Tente novamente.' };
     return { success: 'Link para criar ou atualizar a senha enviado.' };
@@ -109,7 +110,7 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
   let actionLink: string;
   let isRecovery = false;
 
-  if (process.platform === 'win32') {
+  if (directDelivery) {
     const profileQuery = admin.from('profiles').select('id,email,role,active')
       .eq(parent.profile_id ? 'id' : 'email', parent.profile_id ?? parent.email);
     const { data: existingProfile, error: profileError } = await profileQuery.maybeSingle();
@@ -194,7 +195,7 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
     }
   }
 
-  if (process.platform === 'win32') {
+  if (directDelivery) {
     try {
       await sendAccountAccessEmail({ email: parent.email, name: parent.name, actionLink, isRecovery });
     } catch (error) {
