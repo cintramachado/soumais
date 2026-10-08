@@ -7,6 +7,9 @@ coverage
 *.env
 *.env.*
 npm-debug.log*
+.github
+supabase/.temp
+supabase/.branches
 Dockerfile*
 compose*.yaml
 compose*.yml

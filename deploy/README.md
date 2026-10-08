@@ -1,53 +1,68 @@
-# Soul+ Stack Automation with Supabase CLI
+# Deploy e GitHub Actions
 
-This setup uses `supabase start` to launch the full local-development Supabase stack (Postgres, Auth, REST, Realtime, Storage, Studio, Edge Runtime, and the CLI development tools). A separate Docker Compose service runs the Soul+ Next.js app. The startup scripts apply pending migrations before starting the app.
+Producao usa Supabase self-hosted oficial com Docker Compose. A CLI fica somente para desenvolvimento local e para testes descartaveis no CI. Nao e necessario usar Supabase Cloud.
 
-## Requirements
+## Pipeline
 
-- Docker Engine/Desktop and Docker Compose v2.24 or newer.
-- Supabase CLI installed and available as `supabase`.
-- `jq` on Linux for safely reading CLI-generated keys without printing them.
-- At least 8 GB RAM and 40 GB free disk for the full CLI stack.
-- The complete workspace, preserving `apps/web` beside `supabase/migrations`.
+- `.github/workflows/ci.yml`: push em `master`/`main`, pull requests e execucao manual. Executa lint, testes web, build Next/Docker e migrations/testes SQL num Supabase CLI descartavel.
+- `.github/workflows/deploy.yml`: depois do CI aprovado num push em `master`/`main`, ou manualmente com confirmacao `DEPLOY`. A implantacao e desativada por padrao.
+- Configure a variavel de repositorio `PRODUCTION_DEPLOY_ENABLED=true` somente quando a infraestrutura estiver pronta.
+- Crie o environment `production`, restrinja-o a `master`/`main` e configure aprovacao obrigatoria.
+- Instale um runner GitHub Actions Linux dedicado com label `soulmais-production`. Nunca execute jobs de pull requests nesse runner. Ele precisa de Docker Compose, GitHub CLI (`gh`), Bash, `flock` e `gzip`.
+- Configure a variavel do environment `SUPABASE_PROJECT_DIR` apontando para a instalacao persistente, fora do checkout do runner, por exemplo `/var/lib/soulmais/supabase`.
 
-## Start on Windows
+O deploy faz checkout do commit aprovado, constroi a imagem da app, inicia a stack oficial, salva um backup PostgreSQL, aplica migrations pendentes e inicia a app. Nao faz reset, nao apaga volumes e nao atualiza silenciosamente as versoes Supabase.
 
-From the workspace root or `apps/web`, run:
+## Preparacao da infraestrutura
 
-```powershell
-npm run start:stack
-```
-
-It starts all CLI services, runs `supabase migration up --local`, then builds and starts the app container at `http://localhost:3002`. If the CLI Auth container does not already hold the Gmail app password, the script prompts for it with hidden input.
-
-## Start on the Linux server
-
-Copy the complete workspace to the Linux host. From the workspace root, run:
+Nenhum comando abaixo foi executado num servidor remoto. Docker Engine e Compose devem ser disponibilizados pela infraestrutura. Para a primeira instalacao, use a release oficial validada `self-hosted/v0.8.2`; mantenha os arquivos oficiais e segredos fora do checkout de Actions.
 
 ```sh
-bash apps/web/deploy/deploy.sh
+# Execute em um diretorio persistente previamente autorizado pela infraestrutura.
+curl -fsSL https://raw.githubusercontent.com/supabase/supabase/self-hosted/v0.8.2/docker/setup.sh -o setup-supabase.sh
+# Revise o script antes de executar. --skip-deps exige Docker e dependencias instalados.
+sh setup-supabase.sh --skip-deps --ref self-hosted/v0.8.2 --project-dir supabase
 ```
 
-The script starts the Supabase CLI stack, applies pending migrations, reads `PUBLISHABLE_KEY` and `SECRET_KEY` from `supabase status --output json` without displaying them, builds the app image, and starts Soul+ on host port 3002. It asks for the public origin and Gmail app password if they are not set in the shell. The app uses Linux host networking to reach the CLI API at `127.0.0.1:54321`; the API and Postgres ports are not exposed to the network.
+O bootstrap gera as chaves; configure o `.env` privado na instalacao Supabase antes do primeiro deploy. Nao reutilize as chaves de desenvolvimento nem os exemplos oficiais. Restrinja permissoes com `chmod 600 .env`.
 
-The CLI stack runs its full set of Docker services independently of the app Compose service. To inspect or stop them, use `supabase status` and `supabase stop`. To inspect or stop the app container:
+```dotenv
+SUPABASE_PUBLIC_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
+API_EXTERNAL_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev/auth/v1
+SITE_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
+ADDITIONAL_REDIRECT_URLS=https://corymblike-prohibitively-wilma.ngrok-free.dev/**
+DISABLE_SIGNUP=true
+ENABLE_EMAIL_SIGNUP=true
+ENABLE_EMAIL_AUTOCONFIRM=false
+ENABLE_ANONYMOUS_USERS=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=soulmaisespacoalpha@gmail.com
+SMTP_ADMIN_EMAIL=soulmaisespacoalpha@gmail.com
+SMTP_SENDER_NAME=Soul+
+```
+
+Preencha `SMTP_PASS` diretamente no servidor ou em um gerenciador de segredos. Nao envie essa senha pelo chat nem a inclua no Git. O SMTP de producao e enviado pelo Auth; a app nao recebe a senha Gmail.
+
+## Compose de producao
+
+`compose.app.yaml` complementa os arquivos oficiais `docker-compose.yml` e `docker-compose.logs.yml`. Mantem PostgreSQL, Auth, REST, Realtime, Storage, imgproxy, Studio, Edge Runtime, Supavisor, Logflare e Vector. Remove as portas publicadas pelo gateway/pooler e publica apenas a app em `3002`.
+
+As migrations de `supabase/migrations` ficam no mesmo Git da app. O migrador registra versao e checksum, recusa alteracao de migration ja aplicada e executa cada migration em transacao. Antes de aplica-las, `deploy.sh` salva um backup em `SUPABASE_PROJECT_DIR/backups`. Backups sao dados sensiveis: configure retencao e copia criptografada fora do servidor. O script nao executa rollback de schema automaticamente.
 
 ```sh
-docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml ps
-docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml logs -f web
-docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml down
+# Alternativa manual ao Actions, quando autorizado:
+SUPABASE_PROJECT_DIR=/var/lib/soulmais/supabase bash deploy/deploy.sh
 ```
 
-## Ngrok from another machine
+Use pelo menos Compose 2.24 com suporte a `!reset`, e reserve cerca de 8 GB RAM e 80 GB SSD para a stack completa. O servidor deve permanecer ligado; suspendê-lo interrompe o acesso.
 
-Forward ngrok to the Linux host's reachable LAN/VPN address, not to the ngrok machine's own `localhost`:
+## Acesso publico
 
-```sh
-ngrok http http://<linux-host-ip>:3002
-```
+O ngrok da outra maquina deve encaminhar para o IP LAN/VPN do servidor na porta `3002`, nao para o localhost da maquina do ngrok. Auth/REST passam pelo proxy Next, mas o gateway nao tem porta propria publicada. Isso nao torna a API inacessivel pelo app: ela continua protegida por autenticacao e RLS. Studio e PostgreSQL nao sao publicados.
 
-Allow inbound TCP 3002 from the ngrok machine. Keep Supabase API, Studio, Postgres, and pooler ports closed to external networks. The public origin used at startup must be present in `supabase/config.toml` under `auth.additional_redirect_urls`.
+Use um dominio HTTPS estavel para producao. Quando alterar a origem publica, atualize as URLs do `.env` e reconstrua a app, pois `NEXT_PUBLIC_*` e incorporado no build. Testes autenticados de login, convite, recuperacao, relatorios e perfis sao obrigatorios antes de liberar usuarios reais.
 
-## Important
+## Desenvolvimento local
 
-The Supabase CLI stack is intended for local development and testing, not a supported production hosting service. Running it on a server does not make it production-supported. For production or sensitive data, use the official Supabase self-hosted Compose distribution, stable HTTPS, firewall restrictions, automated backups, and a documented upgrade procedure.
+Na raiz do repositorio (`apps/web` nesta maquina), use `npm run start:stack`. Os scripts PowerShell usam a Supabase CLI local e o Compose de desenvolvimento. `compose.cli.yaml` e somente uma alternativa de desenvolvimento Linux; o workflow de producao nao o utiliza.

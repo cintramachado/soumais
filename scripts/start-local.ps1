@@ -1,8 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $webRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-$workspaceRoot = Resolve-Path (Join-Path $webRoot '..\..')
-Set-Location $workspaceRoot
+Set-Location $webRoot
 
 $authContainer = (docker inspect supabase_auth_soulmais | ConvertFrom-Json)[0]
 if (-not $authContainer) { throw 'O container Auth do Supabase não está ativo.' }

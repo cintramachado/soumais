@@ -1,0 +1,49 @@
+name: Deploy Production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY to confirm production deployment'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      vars.PRODUCTION_DEPLOY_ENABLED == 'true' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.confirmation == 'DEPLOY' &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.head_branch == 'master' || github.event.workflow_run.head_branch == 'main')))
+    runs-on: [self-hosted, linux, soulmais-production]
+    environment: production
+    timeout-minutes: 60
+    env:
+      SUPABASE_PROJECT_DIR: ${{ vars.SUPABASE_PROJECT_DIR }}
+      GH_TOKEN: ${{ github.token }}
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+      - name: Require successful CI for this commit
+        run: |
+          set -euo pipefail
+          result=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$DEPLOY_SHA&status=success&per_page=10" --jq '[.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch")] | length')
+          test "$result" -gt 0 || { echo 'No successful CI run for this commit.' >&2; exit 1; }
+      - name: Deploy self-hosted stack and application
+        run: bash deploy/deploy.sh

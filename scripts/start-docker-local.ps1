@@ -2,7 +2,7 @@ param([string]$PublicOrigin)
 
 $ErrorActionPreference = 'Stop'
 $webRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-$workspaceRoot = Resolve-Path (Join-Path $webRoot '..\..')
+Set-Location $webRoot
 if ([string]::IsNullOrWhiteSpace($PublicOrigin)) { $PublicOrigin = $env:SOULMAIS_PUBLIC_ORIGIN }
 if ([string]::IsNullOrWhiteSpace($PublicOrigin)) { $PublicOrigin = 'http://localhost:3002' }
 $PublicOrigin = $PublicOrigin.TrimEnd('/')

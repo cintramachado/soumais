@@ -1,0 +1,53 @@
+services:
+  api-gw:
+    ports: !reset []
+  supavisor:
+    ports: !reset []
+
+  web:
+    profiles: [app]
+    build:
+      context: ${SOULMAIS_WEB_DIR:?Set SOULMAIS_WEB_DIR}
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL:?Set public app origin}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?Generate API keys}
+        NEXT_PUBLIC_SUPABASE_COOKIE_NAME: sb-soulmais-auth-token
+        SUPABASE_URL_INTERNAL: http://api-gw:8000
+        SUPABASE_PROXY_PATHS: "true"
+    restart: unless-stopped
+    ports: ["3002:3000"]
+    environment:
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL:?Set SITE_URL}
+      NEXT_PUBLIC_SUPABASE_COOKIE_NAME: sb-soulmais-auth-token
+      SUPABASE_URL_INTERNAL: http://api-gw:8000
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:?Generate API keys}
+      SOULMAIS_EMAIL_DELIVERY_MODE: auth
+    depends_on:
+      api-gw:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  soulmais-migrate:
+    profiles: [migrate]
+    image: postgres:17-alpine
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGPORT: ${POSTGRES_PORT:-5432}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set database password}
+    volumes:
+      - ${SOULMAIS_WEB_DIR}/supabase/migrations:/migrations:ro
+      - ${SOULMAIS_WEB_DIR}/deploy/apply-migrations.sh:/apply-migrations.sh:ro
+    entrypoint: ["/bin/sh", "/apply-migrations.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy

@@ -1,61 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 web_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-workspace_dir=$(cd -- "$web_dir/../.." && pwd)
-cd "$workspace_dir"
-
-for command in supabase docker jq; do
-  command -v "$command" >/dev/null 2>&1 || { echo "Required command missing: $command" >&2; exit 1; }
+supabase_dir=${SUPABASE_PROJECT_DIR:?Set SUPABASE_PROJECT_DIR to the persistent self-hosted installation}
+supabase_dir=$(cd -- "$supabase_dir" && pwd)
+for command in docker flock gzip; do
+  command -v "$command" >/dev/null || { echo "Missing command: $command" >&2; exit 1; }
 done
+for file in docker-compose.yml docker-compose.logs.yml .env; do
+  [[ -f "$supabase_dir/$file" ]] || { echo "Missing Supabase installation file: $file" >&2; exit 1; }
+done
+[[ "$supabase_dir" != "$web_dir"/* ]] || { echo 'Keep production data outside the Actions checkout.' >&2; exit 1; }
+exec 9>"$supabase_dir/.soulmais-deploy.lock"
+flock -n 9 || { echo 'Another deployment is running.' >&2; exit 1; }
 
-public_origin=${SOULMAIS_PUBLIC_ORIGIN:-}
-if [[ -z "$public_origin" ]]; then
-  read -r -p 'Public app origin (ngrok/domain): ' public_origin
-fi
-public_origin=${public_origin%/}
-[[ "$public_origin" =~ ^https?://[^/]+$ ]] || { echo "Invalid public origin: $public_origin" >&2; exit 1; }
-
-smtp_password=${SOULMAIS_GMAIL_APP_PASSWORD:-}
-if [[ -z "$smtp_password" ]]; then
-  read -r -s -p 'Gmail app password (16 characters): ' smtp_password
-  printf '\n'
-fi
-smtp_password=${smtp_password//[[:space:]]/}
-[[ ${#smtp_password} -eq 16 ]] || { echo 'Gmail app password must be 16 characters.' >&2; exit 1; }
-
-export SOULMAIS_PUBLIC_ORIGIN="$public_origin"
-export SOULMAIS_GMAIL_APP_PASSWORD="$smtp_password"
-export SOULMAIS_SMTP_USER=${SOULMAIS_SMTP_USER:-soulmaisespacoalpha@gmail.com}
-export SOULMAIS_EMAIL_DELIVERY_MODE=direct
-export NODE_USE_SYSTEM_CA=1
-export NEXT_PUBLIC_SITE_URL="$public_origin"
-export NEXT_PUBLIC_SUPABASE_URL="$public_origin"
-export SUPABASE_URL_INTERNAL=http://127.0.0.1:54321
-export SUPABASE_PROXY_PATHS=true
 export SOULMAIS_WEB_DIR="$web_dir"
+unset COMPOSE_PROFILES
+compose=(docker compose --env-file "$supabase_dir/.env" -f "$supabase_dir/docker-compose.yml" -f "$supabase_dir/docker-compose.logs.yml" -f "$web_dir/deploy/compose.app.yaml")
+"${compose[@]}" --profile app --profile migrate config --quiet
+"${compose[@]}" --profile app build web
+"${compose[@]}" up -d --wait
 
-cleanup() {
-  unset SOULMAIS_GMAIL_APP_PASSWORD SUPABASE_SECRET_KEY NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-}
-trap cleanup EXIT
+mkdir -p "$supabase_dir/backups"
+backup="$supabase_dir/backups/pre-migration-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
+"${compose[@]}" exec -T db sh -c 'pg_dump -U postgres -d "$POSTGRES_DB"' | gzip > "$backup"
+gzip -t "$backup"
 
-run_supabase() {
-  local output
-  if ! output=$(supabase "$@" 2>&1); then
-    printf '%s\n' "$output" | sed -E 's/sb_(secret|publishable)_[A-Za-z0-9_-]+/<redacted>/g' >&2
-    return 1
-  fi
-}
-
-echo 'Starting the Supabase CLI stack...'
-run_supabase start
-echo 'Applying pending database migrations...'
-run_supabase migration up --local
-
-status_json=$(supabase status --output json)
-export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -er '.PUBLISHABLE_KEY' <<<"$status_json")
-export SUPABASE_SECRET_KEY=$(jq -er '.SECRET_KEY' <<<"$status_json")
-
-docker compose --project-name soulmais-cli -f "$web_dir/deploy/compose.cli.yaml" up -d --build --wait
-echo "Soul+ is running at $public_origin (host port 3002)."
+"${compose[@]}" --profile migrate run --rm soulmais-migrate
+"${compose[@]}" --profile app up -d --wait web
+echo 'Self-hosted Supabase and Soul+ deployed on port 3002.'

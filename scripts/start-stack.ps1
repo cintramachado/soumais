@@ -1,8 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $webRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-$workspaceRoot = Resolve-Path (Join-Path $webRoot '..\..')
-Set-Location $workspaceRoot
+Set-Location $webRoot
 
 $publicOrigin = $env:SOULMAIS_PUBLIC_ORIGIN
 if ([string]::IsNullOrWhiteSpace($publicOrigin)) { $publicOrigin = 'http://localhost:3002' }

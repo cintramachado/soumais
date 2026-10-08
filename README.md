@@ -19,7 +19,7 @@ Copy-Item .env.example .env.local
 
 Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em `.env.local`. A chave publicável pode estar visível no navegador; nunca use uma secret/service-role key nessas variáveis.
 
-O banco local deste workspace é configurado em `../../supabase`. Na raiz do workspace:
+O banco local e suas migrations ficam em `supabase/`, dentro deste repositório. Execute os comandos a partir da raiz do repositório:
 
 ```powershell
 supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
@@ -113,4 +113,4 @@ O manifest define instalação standalone e ícones 192/512. O service worker s�
 - `src/features/`: componentes organizados por domínio.
 - `src/lib/`: Supabase SSR, autenticação e validações.
 - `public/sw.js`: cache estático limitado e fallback offline.
-- `../../supabase/migrations/`: migrations compartilhadas do workspace.
+- `supabase/migrations/`: migrations versionadas junto da aplicação.

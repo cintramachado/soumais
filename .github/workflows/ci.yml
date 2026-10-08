@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Check Linux deploy scripts
+        run: bash -n deploy/deploy.sh && sh -n deploy/apply-migrations.sh
+      - name: Check Docker build
+        run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_SUPABASE_URL=http://localhost:3002
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci_validation_only
+          --build-arg SUPABASE_URL_INTERNAL=http://api-gw:8000
+          -t soulmais:ci .
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOULMAIS_GMAIL_APP_PASSWORD: ci-placeholder-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.75.0
+      - name: Start disposable test database
+        run: |
+          supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > /tmp/soulmais-supabase.log 2>&1
+          supabase migration up --local
+      - run: supabase test db
+      - name: Stop disposable stack
+        if: always()
+        run: supabase stop
