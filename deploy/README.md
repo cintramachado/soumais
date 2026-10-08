@@ -24,7 +24,6 @@ SUPABASE_PUBLIC_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
 API_EXTERNAL_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev/auth/v1
 SITE_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
 ADDITIONAL_REDIRECT_URLS=https://corymblike-prohibitively-wilma.ngrok-free.dev/**,http://localhost:3002/**
-API_GW_HTTP_PORT=127.0.0.1:8000
 ```
 
 The setup script generates database/API secrets. Set the SMTP values in `.env` to use the Gmail app password:
