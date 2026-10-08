@@ -1,68 +1,53 @@
-# Soul+ Server Deployment
+# Soul+ Stack Automation with Supabase CLI
 
-This deployment uses the official Supabase self-hosted Docker Compose stack, its Logs/Analytics override, and layers the Soul+ web app into the same Compose project. PostgreSQL, Auth, REST, Realtime, Storage, image proxy, Studio, Edge Runtime, Supavisor, Logflare, and Vector run together. Only the Soul+ web port is published; the API gateway and database pooler stay internal to Docker.
+This setup uses `supabase start` to launch the full local-development Supabase stack (Postgres, Auth, REST, Realtime, Storage, Studio, Edge Runtime, and the CLI development tools). A separate Docker Compose service runs the Soul+ Next.js app. The startup scripts apply pending migrations before starting the app.
 
-## Prerequisites
+## Requirements
 
-- A new Linux server with Docker Engine and Docker Compose v2.24 or newer.
-- At least 8 GB RAM and 80 GB SSD recommended for the full stack with Logs/Analytics enabled.
-- The complete Soul+ workspace on the server, with `apps/web` and `supabase/migrations` preserved in their current relative locations.
-- The ngrok domain forwarded from the ngrok machine to the Linux server's reachable IP on TCP port 3002. Do not point the remote ngrok client to its own `localhost`.
+- Docker Engine/Desktop and Docker Compose v2.24 or newer.
+- Supabase CLI installed and available as `supabase`.
+- `jq` on Linux for safely reading CLI-generated keys without printing them.
+- At least 8 GB RAM and 40 GB free disk for the full CLI stack.
+- The complete workspace, preserving `apps/web` beside `supabase/migrations`.
 
-## Install Supabase
+## Start on Windows
 
-On the Linux server, from the Soul+ workspace root, install the official self-hosted stack into `deploy/supabase`:
+From the workspace root or `apps/web`, run:
+
+```powershell
+npm run start:stack
+```
+
+It starts all CLI services, runs `supabase migration up --local`, then builds and starts the app container at `http://localhost:3002`. If the CLI Auth container does not already hold the Gmail app password, the script prompts for it with hidden input.
+
+## Start on the Linux server
+
+Copy the complete workspace to the Linux host. From the workspace root, run:
 
 ```sh
-curl -fsSL https://supabase.link/setup.sh | sh -s -- --project-dir deploy/supabase
+bash apps/web/deploy/deploy.sh
 ```
 
-Review `deploy/supabase/.env` before starting the stack. Set the public app origin and Auth callback URLs:
+The script starts the Supabase CLI stack, applies pending migrations, reads `PUBLISHABLE_KEY` and `SECRET_KEY` from `supabase status --output json` without displaying them, builds the app image, and starts Soul+ on host port 3002. It asks for the public origin and Gmail app password if they are not set in the shell. The app uses Linux host networking to reach the CLI API at `127.0.0.1:54321`; the API and Postgres ports are not exposed to the network.
 
-```dotenv
-SUPABASE_PUBLIC_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
-API_EXTERNAL_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev/auth/v1
-SITE_URL=https://corymblike-prohibitively-wilma.ngrok-free.dev
-ADDITIONAL_REDIRECT_URLS=https://corymblike-prohibitively-wilma.ngrok-free.dev/**,http://localhost:3002/**
-```
-
-The setup script generates database/API secrets. Set the SMTP values in `.env` to use the Gmail app password:
-
-```dotenv
-SMTP_ADMIN_EMAIL=soulmaisespacoalpha@gmail.com
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_USER=soulmaisespacoalpha@gmail.com
-SMTP_PASS=<senha-de-app-do-gmail>
-SMTP_SENDER_NAME=Soul+
-```
-
-Enter the 16-character Google app password directly in the server's private `.env`; do not commit or send it in chat. The overlay removes host port mappings for both the API gateway and Supavisor, so they are reachable only on the Compose network. Browser requests use the ngrok origin and Next.js proxies them to the internal gateway.
-
-## Deploy
-
-From `apps/web/deploy`, run:
+The CLI stack runs its full set of Docker services independently of the app Compose service. To inspect or stop them, use `supabase status` and `supabase stop`. To inspect or stop the app container:
 
 ```sh
-bash deploy.sh
+docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml ps
+docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml logs -f web
+docker compose --project-name soulmais-cli -f apps/web/deploy/compose.cli.yaml down
 ```
 
-The script starts the full Supabase stack, applies numbered migrations from `supabase/migrations` once (each migration and its ledger entry are transactional), then builds and starts Soul+ on port 3002. The container is detached and persists after the SSH session closes.
+## Ngrok from another machine
 
-Check services and logs:
+Forward ngrok to the Linux host's reachable LAN/VPN address, not to the ngrok machine's own `localhost`:
 
 ```sh
-cd deploy/supabase
-docker compose --env-file .env \
-	-f docker-compose.yml \
-	-f docker-compose.logs.yml \
-	-f ../../apps/web/deploy/compose.app.yaml ps
-docker compose --env-file .env \
-	-f docker-compose.yml \
-	-f docker-compose.logs.yml \
-	-f ../../apps/web/deploy/compose.app.yaml logs -f web
+ngrok http http://<linux-host-ip>:3002
 ```
 
-On the separate ngrok machine, forward to the Linux server's reachable LAN/VPN address, for example `ngrok http http://192.168.1.50:3002`. Do not use `localhost` on the ngrok machine. Allow inbound TCP 3002 from that machine; do not expose the Supabase gateway, Studio, Postgres, or pooler publicly.
+Allow inbound TCP 3002 from the ngrok machine. Keep Supabase API, Studio, Postgres, and pooler ports closed to external networks. The public origin used at startup must be present in `supabase/config.toml` under `auth.additional_redirect_urls`.
 
-For production, replace the temporary ngrok origin with a stable HTTPS domain and update `SUPABASE_PUBLIC_URL`, `API_EXTERNAL_URL`, `SITE_URL`, and `ADDITIONAL_REDIRECT_URLS` before starting the stack.
+## Important
+
+The Supabase CLI stack is intended for local development and testing, not a supported production hosting service. Running it on a server does not make it production-supported. For production or sensitive data, use the official Supabase self-hosted Compose distribution, stable HTTPS, firewall restrictions, automated backups, and a documented upgrade procedure.
