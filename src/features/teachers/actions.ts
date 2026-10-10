@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { buildAppUrl } from '@/lib/app-url';
 import { requireProfile } from '@/lib/auth/profile';
@@ -68,6 +69,22 @@ export async function inviteTeacherAccount(input: unknown): Promise<TeacherResul
   revalidatePath('/teacher/teachers', 'layout');
   revalidatePath('/teacher/classes', 'layout');
   return { success: account ? 'Link para criar ou atualizar a senha enviado.' : 'Convite enviado ao professor.' };
+}
+
+export async function deleteTeacher(input: unknown): Promise<TeacherResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: 'Professor inválido.' };
+  await requireProfile('teacher');
+  const client = await createClient();
+  const { error } = await client.rpc('delete_teacher', { p_id: parsed.data });
+  if (error) {
+    if (error.code === '23503') return { error: 'Não é possível apagar: professor tem tarefas ou é responsável por um grupo.' };
+    if (error.code === '42501') return { error: 'Não é possível apagar o próprio cadastro.' };
+    return { error: 'Não foi possível apagar o professor.' };
+  }
+  revalidatePath('/teacher/teachers', 'layout');
+  revalidatePath('/teacher/classes', 'layout');
+  return { success: 'Professor apagado.' };
 }
 
 export async function setTeacherClass(input: unknown): Promise<TeacherResult> {

@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { buildAppUrl } from '@/lib/app-url';
 import { requireProfile } from '@/lib/auth/profile';
@@ -34,6 +35,20 @@ export async function saveParent(input: unknown): Promise<ParentResult> {
     p_phone: parsed.data.phone || null,
     p_active: parsed.data.active,
   });
+}
+
+export async function deleteParent(input: unknown): Promise<ParentResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: 'Responsável inválido.' };
+  await requireProfile('teacher');
+  const client = await createClient();
+  const { error } = await client.rpc('delete_parent', { p_id: parsed.data });
+  if (error) {
+    if (process.env.NODE_ENV === 'development') console.error('Delete parent failed', error.code);
+    return { error: 'Não foi possível apagar o responsável.' };
+  }
+  revalidatePath('/teacher/parents', 'layout');
+  return { success: 'Responsável apagado.' };
 }
 
 export async function linkParentStudent(input: unknown): Promise<ParentResult> {

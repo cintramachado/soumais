@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { buildAppUrl } from "@/lib/app-url";
@@ -398,4 +399,50 @@ export async function setStudentActive(input: unknown): Promise<MutationResult> 
   revalidatePath("/teacher/classes");
   revalidatePath("/teacher/students");
   return { success: "Aluno atualizado." };
+}
+
+export async function deletePeriod(input: unknown): Promise<MutationResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: "Período inválido." };
+  await requireProfile("teacher");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_period", { p_id: parsed.data });
+  if (error) {
+    if (error.code === "23503") return { error: "Não é possível apagar: há tarefas cadastradas neste período." };
+    reportFailure("delete period", error);
+    return { error: "Não foi possível apagar o período." };
+  }
+  revalidatePath("/teacher/periods");
+  return { success: "Período apagado." };
+}
+
+export async function deleteGroup(input: unknown): Promise<MutationResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: "Grupo inválido." };
+  await requireProfile("teacher");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_group", { p_id: parsed.data });
+  if (error) {
+    if (error.code === "23503") return { error: "Não é possível apagar: há tarefas direcionadas a este grupo." };
+    reportFailure("delete group", error);
+    return { error: "Não foi possível apagar o grupo." };
+  }
+  revalidatePath("/teacher/classes", "layout");
+  return { success: "Grupo apagado." };
+}
+
+export async function deleteStudent(input: unknown): Promise<MutationResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: "Aluno inválido." };
+  await requireProfile("teacher");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_student", { p_id: parsed.data });
+  if (error) {
+    if (error.code === "23503") return { error: "Não é possível apagar: há tarefas registradas para este aluno." };
+    reportFailure("delete student", error);
+    return { error: "Não foi possível apagar o aluno." };
+  }
+  revalidatePath("/teacher/classes", "layout");
+  revalidatePath("/teacher/students");
+  return { success: "Aluno apagado." };
 }

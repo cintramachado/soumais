@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 
 import { ActiveToggle } from "@/features/school/components/active-toggle";
+import { DeleteButton } from "@/features/school/components/delete-button";
 import { SchoolEmptyState, SchoolLoadError, formatDatePtBr } from "@/features/school/components/school-empty-state";
 import { ClassEditForm, GroupEditForm, GroupForm, StudentEditForm, StudentForm } from "@/features/school/components/entity-forms";
 import { StudentGroupsControl } from "@/features/school/components/student-groups-control";
@@ -101,6 +102,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
                     </div>
                   </details>
                   <ActiveToggle kind="group" id={group.id} active={group.active} label={`grupo ${group.name}`} />
+                  <DeleteButton kind="group" id={group.id} label={`o grupo ${group.name}`} />
                 </div>
               </article>
             ))}
@@ -155,6 +157,7 @@ export default async function ClassDetailPage({ params }: ClassPageProps) {
                         </div>
                       </details>
                       <ActiveToggle kind="student" id={student.id} active={student.active} label={`aluno ${student.name}`} />
+                      <DeleteButton kind="student" id={student.id} label={`o aluno ${student.name}`} />
                     </div>
                   </div>
                   <StudentGroupsControl enrollmentId={enrollment.id} groups={activeGroups} memberships={studentGroups} />

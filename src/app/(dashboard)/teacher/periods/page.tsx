@@ -1,4 +1,5 @@
 import { ActiveToggle } from "@/features/school/components/active-toggle";
+import { DeleteButton } from "@/features/school/components/delete-button";
 import { SchoolEmptyState, SchoolLoadError, formatDatePtBr } from "@/features/school/components/school-empty-state";
 import { PeriodForm } from "@/features/school/components/school-admin-forms";
 import { requireProfile } from "@/lib/auth/profile";
@@ -74,6 +75,7 @@ export default async function PeriodsPage() {
                       </div>
                     </details>
                     <ActiveToggle kind="period" id={period.id} active={period.active} label={`período ${period.name}`} />
+                    <DeleteButton kind="period" id={period.id} label={`o período ${period.name}`} />
                   </div>
                 </div>
               </article>
