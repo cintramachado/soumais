@@ -63,6 +63,14 @@ O ngrok da outra maquina deve encaminhar para o IP LAN/VPN do servidor na porta 
 
 Use um dominio HTTPS estavel para producao. Quando alterar a origem publica, atualize as URLs do `.env` e reconstrua a app, pois `NEXT_PUBLIC_*` e incorporado no build. Testes autenticados de login, convite, recuperacao, relatorios e perfis sao obrigatorios antes de liberar usuarios reais.
 
+### Links de convite (APP_URL)
+
+Os links de convite/recuperacao de senha enviados por email (`redirectTo` do Supabase Auth) sao montados pela app a partir de `APP_URL` (preferida) ou `NEXT_PUBLIC_SITE_URL` (nome legado, mantido por compatibilidade com os compose files existentes). Nunca sao derivados dos cabecalhos `Host`/`X-Forwarded-Host` da requisicao, para que um convite nao possa ser forjado para apontar para outro dominio.
+
+- Defina `APP_URL` (ou `NEXT_PUBLIC_SITE_URL`) com a URL publica estavel, por exemplo `https://corymblike-prohibitively-wilma.ngrok-free.dev`.
+- Diferente das variaveis `NEXT_PUBLIC_*`, `APP_URL` e lida em tempo de execucao no servidor: basta atualizar a variavel de ambiente e reiniciar o container (`docker compose up -d`), sem necessidade de reconstruir a imagem.
+- Em producao, se nenhuma das duas variaveis estiver configurada, a geracao do link falha explicitamente em vez de usar um endereco local invalido.
+
 ## Desenvolvimento local
 
 Na raiz do repositorio (`apps/web` nesta maquina), use `npm run start:stack`. Os scripts PowerShell usam a Supabase CLI local e o Compose de desenvolvimento. `compose.cli.yaml` e somente uma alternativa de desenvolvimento Linux; o workflow de producao nao o utiliza.

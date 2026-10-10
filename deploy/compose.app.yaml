@@ -18,6 +18,7 @@ services:
     restart: unless-stopped
     ports: ["3002:3000"]
     environment:
+      APP_URL: ${APP_URL:-}
       NEXT_PUBLIC_SITE_URL: ${SITE_URL:?Set SITE_URL}
       NEXT_PUBLIC_SUPABASE_COOKIE_NAME: sb-soulmais-auth-token
       SUPABASE_URL_INTERNAL: http://api-gw:8000

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
+import { buildAppUrl } from '@/lib/app-url';
 import { requireProfile } from '@/lib/auth/profile';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -93,11 +93,7 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
     return { error: 'A chave administrativa do Supabase não está configurada no servidor.' };
   }
 
-  const requestHeaders = await headers();
-  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
-  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'http';
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : 'http://localhost:3003');
-  const redirectTo = new URL('/auth/invite', origin).toString();
+  const redirectTo = buildAppUrl('/auth/invite');
 
   const directDelivery = process.env.SOULMAIS_EMAIL_DELIVERY_MODE === 'direct';
   if (parent.profile_id && !directDelivery) {

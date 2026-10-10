@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 
+import { buildAppUrl } from "@/lib/app-url";
 import { requireProfile } from "@/lib/auth/profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -267,15 +267,11 @@ export async function inviteStudentAccount(input: unknown): Promise<MutationResu
     if (error) return { error: 'Não foi possível vincular a conta existente ao aluno.' };
   }
 
-  const requestHeaders = await headers();
-  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
-  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'http';
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : 'http://localhost:3003');
   const result = await sendAccountCredentials({
     email: student.email,
     name: student.name,
     role: 'student',
-    redirectTo: new URL('/auth/invite', origin).toString(),
+    redirectTo: buildAppUrl('/auth/invite'),
     isRecovery: Boolean(account?.active),
   });
   if (result.error) return { error: result.error === 'account_exists'

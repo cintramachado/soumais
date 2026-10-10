@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { buildAppUrl } from "@/lib/app-url";
 import { getProfile, getRolePath } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import { sendAccountCredentials } from "@/lib/auth/account-credentials";
@@ -38,11 +38,7 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
   if (!parsed.success) return { error: "Informe um email válido." };
 
   const supabase = await createClient();
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? (host ? `${protocol}://${host}` : "http://localhost:3003");
-  const redirectTo = new URL("/auth/invite", origin).toString();
+  const redirectTo = buildAppUrl("/auth/invite");
 
   if (process.env.SOULMAIS_EMAIL_DELIVERY_MODE === "direct") {
     try {
