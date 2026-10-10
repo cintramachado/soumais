@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const createSupabaseClientMock = vi.fn(() => ({ auth: {} }));
+const createSupabaseClientMock = vi.fn((_url: string, _key: string, _options: unknown) => ({ auth: {} }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@supabase/supabase-js', () => ({
