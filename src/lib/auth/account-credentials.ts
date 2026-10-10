@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
+import { createAuthActionClient } from '@/lib/supabase/auth-action-client';
 import { sendAccountAccessEmail } from '@/lib/email/account-access';
 import type { AppRole } from './profile';
 
@@ -20,7 +20,10 @@ export async function sendAccountCredentials({
 }): Promise<{ error?: string }> {
   const directDelivery = process.env.SOULMAIS_EMAIL_DELIVERY_MODE === 'direct';
   if (!directDelivery && isRecovery) {
-    const client = await createClient();
+    // Implicit-flow client: avoids the PKCE code-verifier cookie, which would
+    // otherwise be tied to the browser that triggered this action instead of
+    // the recipient's.
+    const client = createAuthActionClient();
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
     return error ? { error: 'email_send_failed' } : {};
   }

@@ -5,6 +5,7 @@ import { buildAppUrl } from '@/lib/app-url';
 import { requireProfile } from '@/lib/auth/profile';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createAuthActionClient } from '@/lib/supabase/auth-action-client';
 import { sendAccountAccessEmail } from '@/lib/email/account-access';
 import { parentAccountSchema, parentInviteSchema, parentLinkSchema, parentRemoveLinkSchema, parentSchema } from './schemas';
 
@@ -97,7 +98,10 @@ export async function inviteParentAccount(input: unknown): Promise<ParentResult>
 
   const directDelivery = process.env.SOULMAIS_EMAIL_DELIVERY_MODE === 'direct';
   if (parent.profile_id && !directDelivery) {
-    const { error } = await client.auth.resetPasswordForEmail(parent.email, { redirectTo });
+    // Implicit-flow client: avoids the PKCE code-verifier cookie, which would
+    // otherwise be tied to this teacher's browser instead of the parent's.
+    const authAction = createAuthActionClient();
+    const { error } = await authAction.auth.resetPasswordForEmail(parent.email, { redirectTo });
     if (error) return { error: 'Não foi possível enviar o link de senha. Tente novamente.' };
     return { success: 'Link para criar ou atualizar a senha enviado.' };
   }

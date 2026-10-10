@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { buildAppUrl } from "@/lib/app-url";
 import { getProfile, getRolePath } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
+import { createAuthActionClient } from "@/lib/supabase/auth-action-client";
 import { sendAccountCredentials } from "@/lib/auth/account-credentials";
 import { newPasswordSchema, recoverySchema, signInSchema } from "@/lib/validation/auth";
 
@@ -37,7 +38,6 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
   const parsed = recoverySchema.safeParse(input);
   if (!parsed.success) return { error: "Informe um email válido." };
 
-  const supabase = await createClient();
   const redirectTo = buildAppUrl("/auth/invite");
 
   if (process.env.SOULMAIS_EMAIL_DELIVERY_MODE === "direct") {
@@ -59,7 +59,10 @@ export async function requestPasswordReset(input: unknown): Promise<AuthActionRe
     }
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+  // Use an implicit-flow client (no PKCE) so the recovery link works even
+  // when opened in a different browser/device than the one that requested it.
+  const authAction = createAuthActionClient();
+  const { error } = await authAction.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo,
   });
 
