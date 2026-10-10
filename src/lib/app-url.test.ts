@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildAppUrl, getAppUrl } from "./app-url";
 
@@ -38,8 +38,9 @@ describe("getAppUrl", () => {
   });
 
   it("throws an explicit error in production when nothing is configured", () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     expect(() => getAppUrl()).toThrow(/APP_URL/);
+    vi.unstubAllEnvs();
   });
 
   it("never reads request headers as a fallback", () => {
