@@ -22,6 +22,20 @@ export async function saveTaskType(input: unknown): Promise<TaskResult> {
   return { success: 'Tipo de tarefa salvo.' };
 }
 
+export async function deleteTaskType(input: unknown): Promise<TaskResult> {
+  const parsed = z.uuid().safeParse(input);
+  if (!parsed.success) return { error: 'Tipo inválido.' };
+  await requireProfile('teacher');
+  const client = await createClient();
+  const { error } = await client.rpc('delete_task_type', { p_id: parsed.data });
+  if (error) {
+    if (error.code === '23503') return { error: 'Não é possível apagar: há tarefas cadastradas com este tipo.' };
+    return { error: 'Não foi possível apagar o tipo.' };
+  }
+  revalidatePath('/teacher/task-types');
+  return { success: 'Tipo de tarefa apagado.' };
+}
+
 export async function saveTaskDraft(input: unknown): Promise<TaskResult> {
   const parsed = taskDraftSchema.safeParse(input);
   if (!parsed.success) return { error: 'Confira os campos e os destinatários.' };
