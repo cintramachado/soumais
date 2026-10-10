@@ -4,7 +4,7 @@ const createSupabaseClientMock = vi.fn(() => ({ auth: {} }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: (...args: unknown[]) => createSupabaseClientMock(...args),
+  createClient: (url: string, key: string, options: unknown) => createSupabaseClientMock(url, key, options),
 }));
 
 const ORIGINAL_ENV = { ...process.env };
